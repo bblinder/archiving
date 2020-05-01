@@ -3,13 +3,14 @@
 # Downloads YouTube Videos and converts them via FFmpeg into mp3s.
 
 from __future__ import unicode_literals
+from sys import argv
 try:
 	import youtube_dl
 except ImportError:
 	print("Youtube_dl not found.")
 	print("Please ensure it's installed.")
 
-YT_URL = raw_input("URL > ")
+YT_URL = argv[1]
 class MyLogger(object):
 	def debug(self, msg):
 		pass
