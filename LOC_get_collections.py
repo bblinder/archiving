@@ -8,7 +8,6 @@ collections_json = requests.get(loc_url).json()
 while True:
     for collection in collections_json["results"]:
         print(collection["title"])
-        
     next_page = collections_json["pagination"]["next"]
     if next_page is not None:
         collections_json = requests.get(next_page).json()
