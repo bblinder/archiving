@@ -14,7 +14,7 @@ YT_URL = sys.argv[1]
 class MyLogger(object):
 	def debug(self, msg):
 		pass
-	
+
 	def warning(self, msg):
 		pass
 
