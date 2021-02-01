@@ -6,6 +6,9 @@
 // https://www.zotero.org/support/dev/client_coding/javascript_api#running_ad_hoc_javascript_in_zotero
 
 
+// In Zotero open Tools --> Developer --> 'Run Javascript'
+// Paste this code, then Run.
+
 var path = '/home/username/Desktop/urls.txt';
 var urls = Zotero.File.getContents(path).split('\n').map(url => url);
 await Zotero.HTTP.processDocuments(
