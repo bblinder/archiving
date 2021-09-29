@@ -15,8 +15,8 @@ if [[ ! "$(command -v ffmpeg)" ]]; then
 	exit 1
 fi
 
-if [[ ! "$(command -v youtube-dl)" ]]; then
-	echo -e "::: Youtube-dl not found in your PATH"
+if [[ ! "$(command -v yt-dlp)" ]]; then
+	echo -e "::: Youtube-dlp not found in your PATH"
 	echo -e "::: Please make sure it's installed.\\n"
 	exit 1
 fi
@@ -27,7 +27,7 @@ YT_DL() {
 		echo -e "\\n::: Usage: ./Youtube_Downloader.sh [URL]"
 		exit 1
 	else
-		youtube-dl -x "$1"
+		yt-dlp --add-metadata --extract-audio --output "%(uploader)s - %(upload_date)s - %(title)s [%(id)s].%(ext)s" --extractor-args youtube:player_client=android "$1"
 	fi
 }
 
