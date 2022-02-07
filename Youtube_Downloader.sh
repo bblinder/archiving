@@ -38,16 +38,14 @@ mp3_convert() {
 	done
 }
 
-if [[ ! "$(command -v ffmpeg)" ]]; then
-	echo -e "::: ffmpeg not found. Please make sure it's installed.\\n"
-	exit 1
-fi
+COMMANDS="ffmpeg yt-dlp"
 
-if [[ ! "$(command -v yt-dlp)" ]]; then
-	echo -e "::: Youtube-dlp not found in your PATH"
-	echo -e "::: Please make sure it's installed.\\n"
+for cmd in $COMMANDS; do
+	if ! command -v "$cmd" &> /dev/null ; then
+	echo "$cmd not found. Please ensure it's installed"
 	exit 1
-fi
+	fi
+done
 
 YT_DL() {
 	if [[ "$#" -eq 0 ]]; then
