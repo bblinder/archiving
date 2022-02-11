@@ -80,3 +80,5 @@ remove_originals
 
 shopt -u nullglob
 shopt -u nocaseglob
+
+exit 0
