@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from logging import NullHandler
+import sys
 import re
 import requests
 import argparse
@@ -15,6 +17,7 @@ def get_magnet_links(url):
     magnet_links = re.findall(r'magnet:\?[^\'"\s<>\[\]]+', r.text)
     return magnet_links
 
-with open("magnet_links", "w") as f:
-    for link in get_magnet_links(url):
-        print(link.strip(), file=f)
+if get_magnet_links(url):
+    with open("magnet_links.txt", "w") as f:
+        for link in get_magnet_links(url):
+            print(link.strip(), file=f)

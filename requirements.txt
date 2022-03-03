@@ -1,1 +1,5 @@
 yt-dlp
+colorama
+bs4
+requests
+argparse
