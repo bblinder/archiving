@@ -10,12 +10,6 @@ except ImportError:
 	print("::: YouTube-DLP not found.")
 	print("::: Please ensure it's installed.")
 
-try:
-	from halo import Halo
-except ImportError:
-	print("::: Halo not installed - please install with: ")
-	print("::: 'pip install halo' ")
-
 #YT_URL = sys.argv[1]
 class MyLogger(object):
 	def debug(self, msg):
@@ -42,10 +36,10 @@ ydl_opts = {
 	'logger': MyLogger(),
 	'progress_hooks': [my_hook],
 }
+
 def download_url(url):
 	with YoutubeDL(ydl_opts) as ydl:
 		ydl.download([url])
-
 
 if __name__ == '__main__':
 	import argparse
