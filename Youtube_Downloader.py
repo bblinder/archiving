@@ -5,9 +5,9 @@
 from __future__ import unicode_literals
 import sys
 try:
-	import youtube_dl
+	from yt_dlp import YoutubeDL
 except ImportError:
-	print("Youtube_dl not found.")
+	print("YouTube-DLP not found.")
 	print("Please ensure it's installed.")
 
 YT_URL = sys.argv[1]
@@ -37,5 +37,5 @@ ydl_opts = {
 	'progress_hooks': [my_hook],
 }
 
-with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+with YoutubeDL(ydl_opts) as ydl:
 	ydl.download([YT_URL])
