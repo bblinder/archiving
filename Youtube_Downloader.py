@@ -3,6 +3,7 @@
 # Downloads YouTube Videos and converts them via FFmpeg into mp3s.
 
 from __future__ import unicode_literals
+from halo import Halo
 
 try:
 	from yt_dlp import YoutubeDL
@@ -21,25 +22,29 @@ class MyLogger(object):
 	def error(self, msg):
 		print(msg)
 
-def my_hook(d):
-	if d['status'] == 'finished':
-		print('::: Done downloading, now converting...')
+#def my_hook(d):
+#	if d['status'] == 'finished':
+#		print('::: Done downloading, now converting...')
 
 ydl_opts = {
 	'writethumbnail': True,
 	'format': 'bestaudio/best',
 	'postprocessors': [{
+		'key': 'FFmpegMetadata',
+		#'add_metadata': True,
 		'key': 'FFmpegExtractAudio',
 		'preferredcodec': 'mp3',
 		'preferredquality': '320',
 		}],
-	'logger': MyLogger(),
-	'progress_hooks': [my_hook],
+	'logger': MyLogger()
+	#'progress_hooks': [my_hook],
 }
 
+@Halo(text='Downloading and converting...', spinner='dots')
 def download_url(url):
 	with YoutubeDL(ydl_opts) as ydl:
 		ydl.download([url])
+		print("Done!")
 
 if __name__ == '__main__':
 	import argparse
