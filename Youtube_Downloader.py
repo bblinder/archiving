@@ -51,6 +51,6 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Downloads YouTube Videos and converts them via FFmpeg into mp3s.")
 	parser.add_argument("URL", help="The URL of the track to download")
 	args = parser.parse_args()
-	url = args.URL
+	url = args.URL.strip()
 
 	download_url(url)
