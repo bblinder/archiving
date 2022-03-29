@@ -36,8 +36,9 @@ def download_url(url):
 	'writethumbnail': False,
 	'format': 'bestaudio/best',
 	'postprocessors': [{
-		#'key': 'FFmpegMetadata',
-		#'add_metadata': True,
+		'key': 'FFmpegMetadata',
+		'add_metadata': True,
+	},{
 		'key': 'FFmpegExtractAudio',
 		'preferredcodec': 'mp3',
 		'preferredquality': '320',

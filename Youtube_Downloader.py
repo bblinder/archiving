@@ -8,10 +8,8 @@ from halo import Halo
 try:
 	from yt_dlp import YoutubeDL
 except ImportError:
-	print("::: YouTube-DLP not found.")
-	print("::: Please ensure it's installed.")
+	print("::: YouTube-DLP not found. \n::: Install it with 'pip install yt_dlp'")
 
-#YT_URL = sys.argv[1]
 class MyLogger(object):
 	def debug(self, msg):
 		pass
@@ -22,29 +20,28 @@ class MyLogger(object):
 	def error(self, msg):
 		print(msg)
 
-#def my_hook(d):
-#	if d['status'] == 'finished':
-#		print('::: Done downloading, now converting...')
-
 ydl_opts = {
+	'outtmpl': '%(title)s.%(ext)s',
 	'writethumbnail': True,
 	'format': 'bestaudio/best',
 	'postprocessors': [{
 		'key': 'FFmpegMetadata',
-		#'add_metadata': True,
+		'add_metadata': True,
+	}, 
+	{
 		'key': 'FFmpegExtractAudio',
 		'preferredcodec': 'mp3',
 		'preferredquality': '320',
 		}],
 	'logger': MyLogger()
-	#'progress_hooks': [my_hook],
 }
 
-@Halo(text='Downloading and converting...', spinner='dots')
+@Halo(text='Downloading and converting... ', spinner='dots')
 def download_url(url):
 	with YoutubeDL(ydl_opts) as ydl:
-		ydl.download([url])
-		print("Done!")
+		title = ydl.extract_info(url, download=True)['title']
+		print("\n\nDownloaded and converted: " + title)
+	return title
 
 if __name__ == '__main__':
 	import argparse
@@ -53,4 +50,5 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	url = args.URL.strip()
 
-	download_url(url)
+	download = lambda: True if download_url(url) else print("::: Something went wrong.")
+	download()
