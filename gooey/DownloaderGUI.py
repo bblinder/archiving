@@ -68,12 +68,9 @@ def main():
 				'message': 'Please enter a valid URL'
 			}
 		})
+
 	args = parser.parse_args()
 	download_url(args.URL)
-	args = parser.parse_args()
-	download_url(args.URL)
-	args = parser.parse_args()
-	url = args.URL.strip()
 
 	download_url(url)
 	if download_url(url):
