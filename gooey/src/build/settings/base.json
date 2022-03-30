@@ -1,6 +1,0 @@
-{
-    "app_name": "DownloaderGUI",
-    "author": "Brandon Blinderman",
-    "main_module": "src/main/python/DownloaderGUI.py",
-    "version": "0.0.0"
-}
