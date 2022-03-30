@@ -3,6 +3,8 @@
 from __future__ import unicode_literals
 from gooey import Gooey, GooeyParser
 import os, sys
+from fbs_runtime.application_context.PyQt6 import ApplicationContext
+from PyQt6.QtWidgets import QMainWindow
 
 try:
 	from yt_dlp import YoutubeDL
@@ -78,4 +80,10 @@ def main():
 		print("\nSuccessfully downloaded " + str(download_url(url)) + " to " + get_downloads_folder())
 
 if __name__ == '__main__':
-    main()
+	appctxt = ApplicationContext() # 1. Instantiate ApplicationContext
+	window = QMainWindow()
+	window.resize(250, 150)
+	window.show()
+	main()
+	exit_code = appctxt.app.exec() # 2. Invoke appctxt.app.exec()
+	sys.exit(exit_code)
