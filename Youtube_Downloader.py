@@ -32,6 +32,8 @@ ydl_opts = {
 		'key': 'FFmpegExtractAudio',
 		'preferredcodec': 'mp3',
 		'preferredquality': '320',
+	},
+		{'key': 'EmbedThumbnail'
 		}],
 	'logger': MyLogger()
 }
