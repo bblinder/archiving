@@ -5,6 +5,8 @@
 from __future__ import unicode_literals
 from halo import Halo
 import os
+import simple_colors as sc
+
 
 try:
     from yt_dlp import YoutubeDL
@@ -35,7 +37,7 @@ class MyLogger(object):
 def download_url(url):
     ydl_opts = {
         'outtmpl': get_downloads_folder() + '/' + '%(title)s.%(ext)s',
-        'writethumbnail': False,
+        'writethumbnail': True,
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegMetadata',
@@ -44,6 +46,8 @@ def download_url(url):
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '320',
+        },{
+            'key': 'EmbedThumbnail',
         }],
         'logger': MyLogger()
         # 'progress_hooks': [my_hook],
@@ -59,4 +63,4 @@ if __name__ == '__main__':
     url = input("Enter URL: ").strip()  # Asking for URL and sanitizing it.
     download_url(url)
     if download_url(url):
-        print("Successfully downloaded " + str(download_url(url)) + " to Downloads folder.")
+        print("Successfully downloaded " + sc.green(str(download_url(url)), 'bold') + " to Downloads folder.")
