@@ -5,21 +5,27 @@
 from __future__ import unicode_literals
 from halo import Halo
 import os
+from shutil import which
 import simple_colors as sc
 
 
 try:
     from yt_dlp import YoutubeDL
 except ImportError:
-    print("::: YouTube-DLP not found.")
-    print("::: Please ensure it's installed.")
+    print(sc.red("::: YouTube-DLP not found."))
+    print(sc.red("::: Please ensure it's installed."))
 
 
-def get_downloads_folder():
+if not which('ffmpeg'):
+    print(sc.red("::: FFmpeg not found."))
+    print(sc.red("::: Please ensure it's installed."))
+
+
+def get_music_folder():
     if os.name == 'nt':
-        return os.path.join(os.environ['USERPROFILE'], 'Downloads')
+        return os.path.join(os.environ['USERPROFILE'], 'Music')
     else:
-        return os.path.join(os.path.expanduser('~'), 'Downloads')
+        return os.path.join(os.path.expanduser('~'), 'Music')
 
 
 class MyLogger(object):
@@ -36,17 +42,19 @@ class MyLogger(object):
 @Halo(text='Downloading and converting...', spinner='dots')
 def download_url(url):
     ydl_opts = {
-        'outtmpl': get_downloads_folder() + '/' + '%(title)s.%(ext)s',
+        'outtmpl': get_music_folder() + '/' + '%(title)s.%(ext)s',
         'writethumbnail': True,
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegMetadata',
             'add_metadata': True,
-        }, {
+        }, 
+        {
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '320',
-        },{
+        },
+        {
             'key': 'EmbedThumbnail',
         }],
         'logger': MyLogger()
@@ -63,4 +71,4 @@ if __name__ == '__main__':
     url = input("Enter URL: ").strip()  # Asking for URL and sanitizing it.
     download_url(url)
     if download_url(url):
-        print("Successfully downloaded " + sc.green(str(download_url(url)), 'bold') + " to Downloads folder.")
+        print("Successfully downloaded " + sc.green(str(download_url(url)), 'bold') + " to Music folder.")
