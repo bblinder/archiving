@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 from halo import Halo
 import os
+import sys
 from shutil import which
 import simple_colors as sc
 
@@ -14,6 +15,7 @@ try:
 except ImportError:
     print(sc.red("::: YouTube-DLP not found."))
     print(sc.red("::: Please ensure it's installed."))
+    sys.exit(1)
 
 
 if not which('ffmpeg'):
