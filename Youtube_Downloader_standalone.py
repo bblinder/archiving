@@ -44,7 +44,7 @@ class MyLogger(object):
 @Halo(text='Downloading and converting...', spinner='dots')
 def download_url(url):
     ydl_opts = {
-        'outtmpl': get_music_folder() + '/' + '%(title)s.%(ext)s',
+        'outtmpl': args.output + '/' + '%(title)s.%(ext)s',
         'writethumbnail': True,
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -70,7 +70,16 @@ def download_url(url):
 
 
 if __name__ == '__main__':
+    import argparse
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('-o', "--output", help="The directory to download to", default=get_downloads_folder(), required=False)
+    args = argparser.parse_args()
     url = input("Enter URL: ").strip()  # Asking for URL and sanitizing it.
+    if not url:
+        print("::: No URL provided.")
+        exit()
+
+    downloads_folder = args.output if args.output else get_downloads_folder()
     download_url(url)
     if download_url(url):
-        print("Successfully downloaded " + sc.green(str(download_url(url)), 'bold') + " to Music folder.")
+        print(f"Successfully downloaded " + sc.green(str(download_url(url)), 'bold') + f" to {downloads_folder}.\n")
