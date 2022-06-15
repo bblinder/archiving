@@ -5,21 +5,29 @@
 from __future__ import unicode_literals
 from halo import Halo
 import os
+import sys
+from shutil import which
 import simple_colors as sc
 
 
 try:
     from yt_dlp import YoutubeDL
 except ImportError:
-    print("::: YouTube-DLP not found.")
-    print("::: Please ensure it's installed.")
+    print(sc.red("::: YouTube-DLP not found."))
+    print(sc.red("::: Please ensure it's installed."))
+    sys.exit(1)
 
 
-def get_downloads_folder():
+if not which('ffmpeg'):
+    print(sc.red("::: FFmpeg not found."))
+    print(sc.red("::: Please ensure it's installed."))
+
+
+def get_music_folder():
     if os.name == 'nt':
-        return os.path.join(os.environ['USERPROFILE'], 'Downloads')
+        return os.path.join(os.environ['USERPROFILE'], 'Music')
     else:
-        return os.path.join(os.path.expanduser('~'), 'Downloads')
+        return os.path.join(os.path.expanduser('~'), 'Music')
 
 
 class MyLogger(object):
@@ -42,11 +50,13 @@ def download_url(url):
         'postprocessors': [{
             'key': 'FFmpegMetadata',
             'add_metadata': True,
-        }, {
+        }, 
+        {
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '320',
-        },{
+        },
+        {
             'key': 'EmbedThumbnail',
         }],
         'logger': MyLogger()
