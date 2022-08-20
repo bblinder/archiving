@@ -33,7 +33,7 @@ class MyLogger(object):
         print(msg)
 
 
-@Halo(text='Downloading and converting...', spinner='dots')
+@Halo(text='Downloading and converting to MP3...', spinner='dots')
 def download_url(url):
     ydl_opts = {
         'outtmpl': args.output + '/' + '%(title)s.%(ext)s',
