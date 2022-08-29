@@ -1,2 +1,0 @@
-gooey
-yt_dlp
