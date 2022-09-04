@@ -31,6 +31,9 @@ def mp3_convert(audio_file):
                 new_file = audio_file.replace(format, ".mp3")
                 subprocess.run(["ffmpeg", "-i", audio_file, "-c:a", "libmp3lame", "-b:a", "320k", new_file])
                 os.remove(audio_file)
+            else:
+                print(f"::: No {formats} files found")
+                sys.exit()
 
 
 if __name__ == "__main__":
