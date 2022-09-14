@@ -3,8 +3,6 @@
 # derived from: https://ytmusicapi.readthedocs.io/
 # See "Setup" on how to get auth headers.
 
-# TODO: check if upload already exists
-
 import argparse
 import os
 import sys
@@ -90,6 +88,8 @@ def main(track):
 
 if __name__ == '__main__':
     if check_for_upload(args.track):
-        sys.exit(0)
-    else:
-        main(args.track)
+        answer = input("::: Do you want to upload anyway? [y/N] ")
+        if answer.lower() == "y":
+            main(args.track)
+        else:
+            pass
