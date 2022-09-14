@@ -22,18 +22,28 @@ file_path = os.path.dirname(args.audio_file)
 
 
 def mp3_convert(audio_file):
+    """Convert file to mp3. If file is already mp3, do nothing"""
+    
     if not os.path.isfile(audio_file):
-        print("File not specified")
+        print("::: File not specified.")
         sys.exit(1)
+
+    if audio_file.endswith(".mp3"):
+        print("::: File is already mp3. Exiting...")
+        sys.exit(0)
     else:
-        for format in formats:
-            if format in audio_file:
-                new_file = audio_file.replace(format, ".mp3")
-                subprocess.run(["ffmpeg", "-i", audio_file, "-c:a", "libmp3lame", "-b:a", "320k", new_file])
-                os.remove(audio_file)
-            else:
-                print(f"::: No {formats} files found")
-                sys.exit()
+        file_name = os.path.splitext(audio_file)[0]
+        file_ext = os.path.splitext(audio_file)[1]
+        if file_ext in formats:
+            new_file = file_name + ".mp3"
+            subprocess.run(["ffmpeg", "-i", audio_file, "-c:a", "libmp3lame", "-b:a", "320k", new_file])
+            os.remove(audio_file)
+        else:
+            print(f"\nFile doesn't match any of the supported formats:")
+            # print formats as bullet points
+            for format in formats:
+                print(f"* {format}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
