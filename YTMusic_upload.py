@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-# derived from: https://ytmusicapi.readthedocs.io/
-# See "Setup" on how to get auth headers.
+"""
+derived from: https://ytmusicapi.readthedocs.io/
+See "Setup" on how to get auth headers.
+"""
 
 import argparse
 import os
@@ -23,9 +25,12 @@ except ImportError:
     sys.exit(1)
 
 parser = argparse.ArgumentParser(
-    description="This script uploads a music track or directory of tracks to YouTube Music")
+    description="This script uploads a music track or directory of tracks to YouTube Music"
+)
 parser.add_argument("track", help="The path to the track or directory to upload")
-parser.add_argument("-c", "--config", help="The path to the config file", default="headers_auth.json")
+parser.add_argument(
+    "-c", "--config", help="The path to the config file", default="headers_auth.json"
+)
 args = parser.parse_args()
 
 # https://ytmusicapi.readthedocs.io/en/latest/setup.html#using-the-headers-in-your-project
@@ -48,11 +53,11 @@ def check_for_upload(track):
     if search_results:
         print(f"::: Track already exists on YT Music: {search_results[0]['title']}")
         return True
-    else:
-        pass
 
 
 def convert_bytes(bytes_number):
+    """Display file size to something readable"""
+
     tags = ["Bytes", "KB", "MB", "GB", "TB"]
 
     i = 0
@@ -66,9 +71,13 @@ def convert_bytes(bytes_number):
     return str(round(double_bytes, 2)) + " " + tags[i]
 
 
-@Halo(text="Uploading...", spinner='dots')
+@Halo(text="Uploading...", spinner="dots")
 def main(track):
-    music_formats = ['.mp3', '.m4a', '.flac', '.wma', '.ogg']
+    """
+    Determines if the track is a file or directory and uploads accordingly.
+    """
+
+    music_formats = [".mp3", ".m4a", ".flac", ".wma", ".ogg"]
     if os.path.isfile(track):
         filesize = os.path.getsize(track)
         print(f"{track}: {convert_bytes(filesize)}")
@@ -86,7 +95,7 @@ def main(track):
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if check_for_upload(args.track):
         answer = input("::: Do you want to upload anyway? [y/N] ")
         if answer.lower() == "y":

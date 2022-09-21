@@ -3,6 +3,7 @@
 # Downloads YouTube Videos and converts them via FFmpeg into mp3s.
 
 from __future__ import unicode_literals
+
 from halo import Halo
 
 try:
@@ -23,36 +24,39 @@ class MyLogger(object):
 
 
 ydl_opts = {
-    'outtmpl': '%(title)s.%(ext)s',
-    'writethumbnail': True,
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegMetadata',
-        'add_metadata': True,
-    },
+    "outtmpl": "%(title)s.%(ext)s",
+    "writethumbnail": True,
+    "format": "bestaudio/best",
+    "postprocessors": [
         {
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '320',
+            "key": "FFmpegMetadata",
+            "add_metadata": True,
         },
-        {'key': 'EmbedThumbnail'
-         }],
-    'logger': MyLogger()
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "320",
+        },
+        {"key": "EmbedThumbnail"},
+    ],
+    "logger": MyLogger(),
 }
 
 
-@Halo(text='Downloading and converting... ', spinner='dots')
+@Halo(text="Downloading and converting... ", spinner="dots")
 def download_url(url):
     with YoutubeDL(ydl_opts) as ydl:
-        title = ydl.extract_info(url, download=True)['title']
+        title = ydl.extract_info(url, download=True)["title"]
         print("\n\nDownloaded and converted: " + title)
     return title
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Downloads YouTube Videos and converts them via FFmpeg into mp3s.")
+    parser = argparse.ArgumentParser(
+        description="Downloads YouTube Videos and converts them via FFmpeg into mp3s."
+    )
     parser.add_argument("URL", help="The URL of the track to download")
     args = parser.parse_args()
     url = args.URL.strip()
