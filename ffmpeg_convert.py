@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+""" A script to convert a video downloaded with yt-dlp to an audio format"""
+
 import argparse
 import os
 import subprocess
