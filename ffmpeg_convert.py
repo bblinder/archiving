@@ -20,6 +20,12 @@ except FileNotFoundError:
 
 
 formats = [".m4a", ".webm", ".opus", ".mkv", ".ogg", ".wav", ".flac"]
+# auto-detect file extension
+# formats = []
+# for format in subprocess.run(["ffmpeg", "-formats"], capture_output=True).stdout.decode().splitlines():
+#     if format.startswith(" D "):
+#         formats.append(format.split()[1])
+
 file_path = os.path.dirname(args.audio_file)
 
 
