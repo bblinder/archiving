@@ -4,12 +4,24 @@
 
 from __future__ import unicode_literals
 
+import shutil
+import sys
+
 from halo import Halo
 
 try:
     from yt_dlp import YoutubeDL
 except ImportError:
     print("::: YouTube-DLP not found. \n::: Install it with 'pip install yt_dlp'")
+
+
+def ffmpeg_check():
+    """Check if FFmpeg is installed."""
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path is None:
+        print("::: FFmpeg not found in $PATH.")
+        print("::: Please ensure it's installed.")
+        sys.exit(1)
 
 
 class MyLogger(object):
@@ -60,6 +72,8 @@ if __name__ == "__main__":
     parser.add_argument("URL", help="The URL of the track to download")
     args = parser.parse_args()
     url = args.URL.strip()
+
+    ffmpeg_check()
 
     download = lambda: True if download_url(url) else print("::: Something went wrong.")
     download()
