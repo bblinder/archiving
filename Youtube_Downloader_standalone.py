@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 
 import os
+import shutil
 import sys
 
 import simple_colors as sc
@@ -24,6 +25,15 @@ def get_downloads_folder():
     else:
         downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
     return downloads_folder
+
+
+def ffmpeg_check():
+    """Check if FFmpeg is installed."""
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path is None:
+        print("::: FFmpeg not found.")
+        print("::: Please ensure it's installed.")
+        sys.exit(1)
 
 
 class MyLogger(object):
@@ -82,6 +92,9 @@ if __name__ == "__main__":
         required=False,
     )
     args = argparser.parse_args()
+
+    ffmpeg_check()  # Check if FFmpeg is installed.
+
     url = input("Enter URL: ").strip()  # Asking for URL and sanitizing it.
     if not url:
         print("::: No URL provided.")
