@@ -13,7 +13,7 @@ for cmd in $COMMANDS; do
     fi
 done
 
-spotdl "$@" --path-template '{artist} - {title}.{ext}'
+spotdl "$@" --output '{artist} - {title}'
 
 ## TODO
 ## use getops to provide options
