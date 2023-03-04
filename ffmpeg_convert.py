@@ -6,18 +6,16 @@ import argparse
 import os
 import subprocess
 import sys
+from shutil import which
 
 parser = argparse.ArgumentParser(description="Convert audio files to mp3")
 parser.add_argument("audio_file", help="audio file to convert")
 args = parser.parse_args()
 
 # Checking if ffmpeg is installed
-try:
-    subprocess.run(["ffmpeg", "-version"], stdout=subprocess.DEVNULL, check=True)
-except FileNotFoundError:
+if not which("ffmpeg"):
     print("ffmpeg is not installed")
     sys.exit(1)
-
 
 formats = [".m4a", ".webm", ".opus", ".mkv", ".ogg", ".wav", ".flac"]
 # auto-detect file extension
@@ -61,8 +59,8 @@ def mp3_convert(audio_file):
         else:
             print("\nFile doesn't match any of the supported formats:")
             # print formats as bullet points
-            for format in formats:
-                print(f"* {format}")
+            for f in formats:
+                print(f"* {f}")
             sys.exit(1)
 
 
