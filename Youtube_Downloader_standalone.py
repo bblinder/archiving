@@ -70,8 +70,8 @@ def download_url(url):
                 "key": "EmbedThumbnail",
             },
         ],
-        "logger": MyLogger()
-        # 'progress_hooks': [my_hook],
+        "logger": MyLogger(),
+        #"progress_hooks": [my_hook],
     }
 
     with YoutubeDL(ydl_opts) as ydl:
