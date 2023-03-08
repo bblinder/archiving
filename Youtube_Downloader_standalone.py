@@ -47,7 +47,6 @@ class MyLogger(object):
         print(msg)
 
 
-@Halo(text="Downloading and converting to MP3...", spinner="dots")
 def download_url(url):
     """
     Download the video at 320kbps as an mp3, and retain thumbnail and metadata.
@@ -71,13 +70,13 @@ def download_url(url):
             },
         ],
         "logger": MyLogger(),
-        #"progress_hooks": [my_hook],
+        # "progress_hooks": [my_hook],
     }
 
     with YoutubeDL(ydl_opts) as ydl:
-        # Download video and store its name in a variable
-        title = ydl.extract_info(url, download=True)["title"]
-    return title
+        ydl.extract_info(url)
+
+    return True
 
 
 if __name__ == "__main__":
@@ -100,9 +99,9 @@ if __name__ == "__main__":
         print("::: No URL provided.")
         sys.exit(1)
 
-    download_folder = args.output if args.output else get_downloads_folder()
+    spinner = Halo(text="Downloading and converting to MP3...", spinner="dots")
+    spinner.start()
     download_url(url)
-    if download_url(url):
-        print(
-            f"Successfully downloaded {sc.green(str(download_url(url)), 'bold')} to {download_folder}.\n"
-        )
+    spinner.stop()
+
+    print(f"Successfully downloaded {sc.green(url, 'bold')} to {args.output}.\n")
