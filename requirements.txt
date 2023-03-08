@@ -4,5 +4,5 @@ bs4
 requests
 argparse
 halo
-gooey
 click
+rich

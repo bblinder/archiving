@@ -8,14 +8,18 @@ import os
 import shutil
 import sys
 
-import simple_colors as sc
 from halo import Halo
+from rich.console import Console
+from rich.prompt import Prompt
 
 try:
     from yt_dlp import YoutubeDL
 except ImportError:
     print("::: YouTube-DLP not found.")
     print("::: Please ensure it's installed.")
+
+console = Console()
+prompt = Prompt()
 
 
 def get_downloads_folder():
@@ -31,8 +35,8 @@ def ffmpeg_check():
     """Check if FFmpeg is installed."""
     ffmpeg_path = shutil.which("ffmpeg")
     if ffmpeg_path is None:
-        print("::: FFmpeg not found.")
-        print("::: Please ensure it's installed.")
+        console.log("FFmpeg not found.", style="bold red")
+        console.log("Please ensure it's installed.", style="bold red")
         sys.exit(1)
 
 
@@ -70,14 +74,12 @@ def download_url(url):
             },
         ],
         "logger": MyLogger(),
-        # "progress_hooks": [my_hook],
     }
 
     with YoutubeDL(ydl_opts) as ydl:
-        # export title to global variable
-        ydl.extract_info(url)
+        title = ydl.extract_info(url)["title"]
 
-    return True
+    return title
 
 
 if __name__ == "__main__":
@@ -95,14 +97,14 @@ if __name__ == "__main__":
 
     ffmpeg_check()  # Check if FFmpeg is installed.
 
-    url = input("Enter URL: ").strip()  # Asking for URL and sanitizing it.
+    url = prompt.ask("Enter URL").strip()  # Asking for URL and sanitizing it.
     if not url:
-        print("::: No URL provided.")
+        console.log("No URL provided.", style="bold red")
         sys.exit(1)
 
     spinner = Halo(text="Downloading and converting to MP3...", spinner="dots")
     spinner.start()
     download_url(url)
     spinner.stop()
-    
-    print(f"Successfully downloaded {sc.green(url, 'bold')} to {args.output}.\n")
+
+    console.log(f"Successfully downloaded {url} to {args.output}.", style="bold green")
