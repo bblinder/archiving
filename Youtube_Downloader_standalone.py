@@ -77,9 +77,9 @@ def download_url(url):
     }
 
     with YoutubeDL(ydl_opts) as ydl:
-        title = ydl.extract_info(url)["title"]
+        ydl.extract_info(url)["title"]
 
-    return title
+    return True
 
 
 if __name__ == "__main__":
