@@ -58,7 +58,7 @@ ydl_opts = {
 @Halo(text="Downloading and converting... ", spinner="dots")
 def download_url(url):
     with YoutubeDL(ydl_opts) as ydl:
-        title = ydl.extract_info(url, download=True)["title"]
+        title = ydl.extract_info(url)["title"]
         print("\n\nDownloaded and converted: " + title)
     return title
 

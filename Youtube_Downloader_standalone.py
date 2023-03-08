@@ -74,6 +74,7 @@ def download_url(url):
     }
 
     with YoutubeDL(ydl_opts) as ydl:
+        # export title to global variable
         ydl.extract_info(url)
 
     return True
@@ -103,5 +104,5 @@ if __name__ == "__main__":
     spinner.start()
     download_url(url)
     spinner.stop()
-
+    
     print(f"Successfully downloaded {sc.green(url, 'bold')} to {args.output}.\n")
