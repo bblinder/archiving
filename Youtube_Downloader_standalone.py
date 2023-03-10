@@ -51,12 +51,13 @@ class MyLogger(object):
         print(msg)
 
 
-def download_url(url):
+def download_url(url, args):
     """
     Download the video at 320kbps as an mp3, and retain thumbnail and metadata.
     """
+    output_path = os.path.join(args.output, "%(title)s.%(ext)s")
     ydl_opts = {
-        "outtmpl": args.output + "/" + "%(title)s.%(ext)s",
+        "outtmpl": output_path,
         "writethumbnail": True,
         "format": "bestaudio/best",
         "postprocessors": [
@@ -77,7 +78,7 @@ def download_url(url):
     }
 
     with YoutubeDL(ydl_opts) as ydl:
-        ydl.extract_info(url)["title"]
+        ydl.extract_info(url)
 
     return True
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
 
     spinner = Halo(text="Downloading and converting to MP3...", spinner="dots")
     spinner.start()
-    download_url(url)
+    download_url(url, args)
     spinner.stop()
 
     console.log(f"Successfully downloaded {url} to {args.output}.", style="bold green")
