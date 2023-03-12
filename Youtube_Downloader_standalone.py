@@ -12,14 +12,14 @@ from halo import Halo
 from rich.console import Console
 from rich.prompt import Prompt
 
+console = Console()
+prompt = Prompt()
+
 try:
     from yt_dlp import YoutubeDL
 except ImportError:
-    print("::: YouTube-DLP not found.")
-    print("::: Please ensure it's installed.")
-
-console = Console()
-prompt = Prompt()
+    console.log("::: YouTube-DLP not found.")
+    console.log("::: Please ensure it's installed.")
 
 
 def get_downloads_folder():
@@ -41,6 +41,8 @@ def ffmpeg_check():
 
 
 class MyLogger(object):
+    """Logger for yt-dlp."""
+
     def debug(self, msg):
         pass
 
