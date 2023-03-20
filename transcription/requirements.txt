@@ -1,0 +1,4 @@
+openai-whisper
+rich
+yt-dlp
+halo
