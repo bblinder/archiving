@@ -26,11 +26,13 @@ and download the whisper model (if not already downloaded).
 """
 
 import os
+import sys
 
 try:
     import whisper
 except ImportError:
     print("whisper not installed.")
+    sys.exit(1)
 from halo import Halo
 from rich.console import Console
 from rich.prompt import Prompt
