@@ -41,6 +41,7 @@ try:
     from yt_dlp import YoutubeDL
 except ImportError:
     print("yt-dlp not installed.")
+    sys.exit(1)
 
 console = Console()
 prompt = Prompt()
