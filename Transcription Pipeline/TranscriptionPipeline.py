@@ -11,7 +11,7 @@ and returns the path to the audio file.
 and outputs the text to a file.
 
 Requirements:
-- Python 3.6 or higher
+- Python 3.6 - 3.9 (whisper doesn't seem to work with higher versions)
 - yt-dlp (pip install yt-dlp)
 - whisper (OpenAI)
 - rich (pip install rich)
@@ -27,21 +27,29 @@ and download the whisper model (if not already downloaded).
 
 import os
 import sys
+from shutil import which
+import ffmpeg
 
 try:
     import whisper
 except ImportError:
-    print("whisper not installed.")
-    sys.exit(1)
-from halo import Halo
+    raise ImportError("whisper not installed.")
+
 from rich.console import Console
 from rich.prompt import Prompt
 
 try:
     from yt_dlp import YoutubeDL
 except ImportError:
-    print("yt-dlp not installed.")
-    sys.exit(1)
+    raise ImportError("yt-dlp not installed.")
+
+
+try:
+    from rich.console import Console
+    from rich.prompt import Prompt
+except ImportError:
+    raise ImportError("rich not installed.")
+
 
 console = Console()
 prompt = Prompt()
@@ -49,65 +57,72 @@ prompt = Prompt()
 
 logger = console.log
 
+def check_module(module_name):
+    try:
+        __import__(module_name)
+    except ImportError:
+        raise ImportError(f"{module_name} not installed.")
 
-def download_video(url):
+
+def download_video(url, output_dir):
     """
     Download the video at 128kbps as an mp3, and retain thumbnail and metadata.
     """
-    output_path = os.path.join(os.getcwd(), "%(title)s.%(ext)s")
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    output_path = os.path.join(output_dir, "%(title)s.%(ext)s")
     ydl_opts = {
         "outtmpl": output_path,
-        "writethumbnail": True,
-        "format": "bestaudio/best",
+        "writethumbnail": False,
+        "format": "mp3/bestaudio/best",
         "postprocessors": [
-            {
-                "key": "FFmpegMetadata",
-                "add_metadata": True,
-            },
+            # {
+            #    "key": "FFmpegMetadata",
+            #    "add_metadata": True,
+            # },
             {
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
                 "preferredquality": "128",
             },
-            {
-                "key": "EmbedThumbnail",
-            },
+            # {
+            #    "key": "EmbedThumbnail",
+            # },
         ],
-        "logger": logger,
+        # "logger": logger,
     }
 
     with YoutubeDL(ydl_opts) as ydl:
-        ydl.extract_info(url)
+        path_to_file = os.path.join(
+            output_dir, ydl.extract_info(url, download=True)["title"] + ".mp3"
+        )
 
-    return os.path.join(
-        os.getcwd(),
-        output_path
-        % {"title": ydl.extract_info(url, download=False).get("title"), "ext": "mp3"},
-    )
+    return path_to_file
 
 
-def transcribe_audio(audio_file):
+def transcribe_audio(audio_file, output_path):
     """
     Transcribe the audio file using OpenAI's whisper and output to a text file.
     """
     model = whisper.load_model("medium.en")
-    audio = whisper.load_audio(audio_file)
-    mel = whisper.log_mel_spectrogram(audio).to(model.device)
-    options = whisper.DecodingOptions()
-    result = whisper.decode(model, mel, options)
-    transcribed_text = result.text
+    result = model.transcribe(audio_file)
 
-    with open(
-        f"{os.path.splitext(audio_file)[0]}.txt", "w", encoding="utf-8"
-    ) as text_file:
-        text_file.write(transcribed_text)
+
+    with open(output_path, "w") as f:
+        f.write(result["text"])
 
 
 if __name__ == "__main__":
-    URL = prompt.ask("Enter the YouTube video URL: ")
-    spinner = Halo(text="Downloading video...", spinner="dots")
-    spinner.start()
-    audio_file = download_video(URL)
-    spinner.succeed("Video downloaded!")
-    spinner.end()
-    transcribe_audio(audio_file)
+    check_module("whisper")
+    check_module("yt_dlp")
+    check_module("rich")
+    
+
+    url = prompt.ask("Enter the YouTube video URL")
+    output_dir = os.path.join(os.getcwd(), "downloads")
+    audio_file = download_video(url, output_dir)
+
+    output_path = os.path.join(os.getcwd(), "transcription.txt")
+    transcribe_audio(audio_file, output_path)
+
+    
