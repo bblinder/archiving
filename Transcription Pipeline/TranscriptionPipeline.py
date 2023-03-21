@@ -26,36 +26,24 @@ and download the whisper model (if not already downloaded).
 """
 
 import os
-import sys
 from shutil import which
-import ffmpeg
 
-try:
-    import whisper
-except ImportError:
-    raise ImportError("whisper not installed.")
-
+import whisper
 from rich.console import Console
 from rich.prompt import Prompt
-
-try:
-    from yt_dlp import YoutubeDL
-except ImportError:
-    raise ImportError("yt-dlp not installed.")
-
-
-try:
-    from rich.console import Console
-    from rich.prompt import Prompt
-except ImportError:
-    raise ImportError("rich not installed.")
-
+from yt_dlp import YoutubeDL
 
 console = Console()
 prompt = Prompt()
 
 
-logger = console.log
+def ffmpeg_check():
+    """
+    Check if ffmpeg is installed.
+    """
+    if which("ffmpeg") is None:
+        raise FileNotFoundError("ffmpeg not installed.")
+
 
 def check_module(module_name):
     try:
@@ -70,24 +58,34 @@ def download_video(url, output_dir):
     """
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
+
     output_path = os.path.join(output_dir, "%(title)s.%(ext)s")
+    info = YoutubeDL().extract_info(url, download=False)
+    title = info["title"]
+    path_to_file = os.path.join(output_dir, f"{title}.mp3")
+    if os.path.isfile(path_to_file):
+        console.print(
+            f"[bold red]{title} already downloaded. Skipping this part...[/bold red]"
+        )
+        return path_to_file
+
     ydl_opts = {
         "outtmpl": output_path,
-        "writethumbnail": False,
+        "writethumbnail": True,
         "format": "mp3/bestaudio/best",
         "postprocessors": [
-            # {
-            #    "key": "FFmpegMetadata",
-            #    "add_metadata": True,
-            # },
+            {
+                "key": "FFmpegMetadata",
+                "add_metadata": True,
+            },
             {
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
                 "preferredquality": "128",
             },
-            # {
-            #    "key": "EmbedThumbnail",
-            # },
+            {
+                "key": "EmbedThumbnail",
+            },
         ],
         # "logger": logger,
     }
@@ -101,28 +99,26 @@ def download_video(url, output_dir):
 
 
 def transcribe_audio(audio_file, output_path):
-    """
-    Transcribe the audio file using OpenAI's whisper and output to a text file.
-    """
     model = whisper.load_model("medium.en")
     result = model.transcribe(audio_file)
 
-
     with open(output_path, "w") as f:
         f.write(result["text"])
+
+    console.print(
+        f"[bold green]Transcription complete. Output saved to {output_path}[/bold green]"
+    )
 
 
 if __name__ == "__main__":
     check_module("whisper")
     check_module("yt_dlp")
     check_module("rich")
-    
+    ffmpeg_check()
 
     url = prompt.ask("Enter the YouTube video URL")
-    output_dir = os.path.join(os.getcwd(), "downloads")
+    output_dir = os.path.join(os.getcwd(), "transcriptions")
     audio_file = download_video(url, output_dir)
 
-    output_path = os.path.join(os.getcwd(), "transcription.txt")
+    output_path = os.path.splitext(audio_file)[0] + ".txt"
     transcribe_audio(audio_file, output_path)
-
-    
