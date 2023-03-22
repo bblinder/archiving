@@ -100,8 +100,9 @@ def download_video(url, output_dir):
 
 
 def transcribe_audio(audio_file, output_path):
-    model = whisper.load_model("medium.en")
-    result = model.transcribe(audio_file, fp16=False, language='English')
+    #model = whisper.load_model("medium.en")
+    model = whisper.load_model("small.en")
+    result = model.transcribe(audio_file, fp16=False)
 
     with open(output_path, "w") as f:
         f.write(result["text"])
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     output_path = os.path.splitext(audio_file)[0] + ".txt"
 
     spinner = Halo(
-        text="Transcribing audio... please be patient, this might take a while..." ,
+        text=("\nTranscribing audio... please be patient, this might take a while..."),
         spinner="dots"
         )
     spinner.start()
