@@ -32,6 +32,7 @@ import whisper
 from rich.console import Console
 from rich.prompt import Prompt
 from yt_dlp import YoutubeDL
+from halo import Halo
 
 console = Console()
 prompt = Prompt()
@@ -100,7 +101,7 @@ def download_video(url, output_dir):
 
 def transcribe_audio(audio_file, output_path):
     model = whisper.load_model("medium.en")
-    result = model.transcribe(audio_file)
+    result = model.transcribe(audio_file, fp16=False, language='English')
 
     with open(output_path, "w") as f:
         f.write(result["text"])
@@ -121,4 +122,11 @@ if __name__ == "__main__":
     audio_file = download_video(url, output_dir)
 
     output_path = os.path.splitext(audio_file)[0] + ".txt"
+
+    spinner = Halo(
+        text="Transcribing audio... please be patient, this might take a while..." ,
+        spinner="dots"
+        )
+    spinner.start()
     transcribe_audio(audio_file, output_path)
+    spinner.stop()
