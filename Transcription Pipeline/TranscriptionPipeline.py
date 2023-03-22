@@ -57,8 +57,8 @@ def download_video(url, output_dir):
     """
     Download the video at 128kbps as an mp3, and retain thumbnail and metadata.
     """
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+
+    os.makedirs(output_dir, exist_ok=True)
 
     output_path = os.path.join(output_dir, "%(title)s.%(ext)s")
     info = YoutubeDL().extract_info(url, download=False)
