@@ -11,6 +11,14 @@ from argparse import ArgumentParser
 from yt_dlp import YoutubeDL
 from subprocess import run
 
+
+if not os.path.isfile("config.yaml"):
+    raise FileNotFoundError(
+        "config.yaml not found. Please create a config.yaml file in the same directory as the script."
+    )
+    
+
+
 with open("config.yaml", "r") as ymlfile:
     config = yaml.safe_load(ymlfile)
 

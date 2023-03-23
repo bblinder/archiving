@@ -4,3 +4,4 @@ yt-dlp
 halo
 google-cloud-speech
 google-cloud-storage
+pyyaml
