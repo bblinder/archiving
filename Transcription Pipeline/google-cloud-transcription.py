@@ -3,20 +3,18 @@
 import logging
 import os
 import sys
-
-import google.auth
-from google.cloud import speech, storage
-import yaml
 from argparse import ArgumentParser
-from yt_dlp import YoutubeDL
 from subprocess import run
 
+import google.auth
+import yaml
+from google.cloud import speech, storage
+from yt_dlp import YoutubeDL
 
 if not os.path.isfile("config.yaml"):
     raise FileNotFoundError(
         "config.yaml not found. Please create a config.yaml file in the same directory as the script."
     )
-    
 
 
 with open("config.yaml", "r") as ymlfile:
@@ -93,7 +91,6 @@ def upload_to_gcs(audio_file, bucket_name):
     if blob.exists():
         logger.info(f"File {audio_file} already exists in bucket {bucket_name}.")
         return f"gs://{bucket_name}/{blob.name}", bucket, bucket_name
-
 
     blob.upload_from_filename(audio_file)
 
@@ -172,7 +169,6 @@ def ffmpeg_convert_to_wav(audio_file):
     return output_path
 
 
-
 def main(args):
     # Create a temporary directory to store the video and audio files
     output_dir = os.path.join(os.getcwd(), "tmp")
@@ -202,7 +198,7 @@ def main(args):
     ).lower()
     if deletion_request == "y":
         empty_gcs_bucket(bucket_name)
-        #delete_gcs_bucket(bucket_name)
+        # delete_gcs_bucket(bucket_name)
         logger.info("Audio file deleted from Google Cloud Storage.")
     else:
         logger.info("Audio file not deleted from Google Cloud Storage.")
@@ -217,10 +213,11 @@ def main(args):
         logger.info("Temporary directory deleted.")
     else:
         logger.info("Temporary directory not deleted.")
-    
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Transcribe a YouTube video using Google Cloud Speech-to-Text API.")
+    parser = ArgumentParser(
+        description="Transcribe a YouTube video using Google Cloud Speech-to-Text API."
+    )
     parser.add_argument("url", help="YouTube video URL")
     main(parser.parse_args())
