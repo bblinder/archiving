@@ -55,7 +55,7 @@ def check_module(module_name):
 
 def download_video(url, output_dir):
     """
-    Download the video at 128kbps as an mp3, and retain thumbnail and metadata.
+    Download the video at 48kbps as an mp3, and retain thumbnail and metadata.
     """
 
     os.makedirs(output_dir, exist_ok=True)
@@ -73,7 +73,7 @@ def download_video(url, output_dir):
     ydl_opts = {
         "outtmpl": output_path,
         "writethumbnail": True,
-        "format": "mp3/bestaudio/best",
+        "format": "wav/bestaudio/best",
         "postprocessors": [
             {
                 "key": "FFmpegMetadata",
@@ -81,27 +81,27 @@ def download_video(url, output_dir):
             },
             {
                 "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "128",
+                "preferredcodec": "wav",
+                "preferredquality": "16",
             },
-            {
-                "key": "EmbedThumbnail",
-            },
+            #{
+            #    "key": "EmbedThumbnail",
+            #},
         ],
         # "logger": logger,
     }
 
     with YoutubeDL(ydl_opts) as ydl:
         path_to_file = os.path.join(
-            output_dir, ydl.extract_info(url, download=True)["title"] + ".mp3"
+            output_dir, ydl.extract_info(url, download=True)["title"] + ".wav"
         )
 
     return path_to_file
 
 
 def transcribe_audio(audio_file, output_path):
-    # model = whisper.load_model("medium.en")
-    model = whisper.load_model("small.en")
+    model = whisper.load_model("medium.en")
+    #model = whisper.load_model("small.en")
     result = model.transcribe(audio_file, fp16=False)
 
     with open(output_path, "w") as f:

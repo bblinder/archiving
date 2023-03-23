@@ -1,4 +1,6 @@
-openai-whisper
+# openai-whisper
 rich
 yt-dlp
 halo
+google-cloud-speech
+google-cloud-storage
