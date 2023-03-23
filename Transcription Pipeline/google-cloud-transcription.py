@@ -172,8 +172,13 @@ def ffmpeg_convert_to_wav(audio_file):
 def main(args):
     # Create a temporary directory to store the video and audio files
     output_dir = os.path.join(os.getcwd(), "tmp")
-    path_to_file = download_video(args.url, output_dir)
-    logger.info(f"Video downloaded to {path_to_file}")
+    if args.file:
+        path_to_file = args.file # use the file provided by the user
+        logger.info(f"Using existing file: {path_to_file}")
+    else:
+        # Download the video from YouTube
+        path_to_file = str(download_video(args.url, output_dir))
+        logger.info(f"Video downloaded to {path_to_file}")
 
     # Upload the audio file to Google Cloud Storage
     gcs_uri, bucket, bucket_name = upload_to_gcs(path_to_file, GCS_BUCKET)
@@ -219,5 +224,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(
         description="Transcribe a YouTube video using Google Cloud Speech-to-Text API."
     )
-    parser.add_argument("url", help="YouTube video URL")
+    #parser.add_argument("url", help="YouTube video URL", nargs="?")
+    parser.add_argument("-u", "--url", help="YouTube video URL", required=False, type=str)
+    parser.add_argument("-f", "--file", help="Path to file", required=False,type=str)
     main(parser.parse_args())
