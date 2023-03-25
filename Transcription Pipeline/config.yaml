@@ -1,1 +1,2 @@
-gcs_bucket: <GCS_BUCKET_NAME>
+#gcs_bucket: ""
+openai_api_key: ""

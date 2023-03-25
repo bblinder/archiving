@@ -5,3 +5,8 @@ halo
 google-cloud-speech
 google-cloud-storage
 pyyaml
+pydub
+openai
+tqdm
+yaml
+json

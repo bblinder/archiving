@@ -8,7 +8,10 @@ from subprocess import run
 
 import google.auth
 import yaml
-from google.cloud import speech, storage
+from google.cloud import speech_v1p1beta1 as speech
+from google.cloud import storage
+
+# from google.cloud import speech, storage
 from yt_dlp import YoutubeDL
 
 if not os.path.isfile("config.yaml"):
@@ -91,11 +94,10 @@ def upload_to_gcs(audio_file, bucket_name):
     if blob.exists():
         logger.info(f"File {audio_file} already exists in bucket {bucket_name}.")
         return f"gs://{bucket_name}/{blob.name}", bucket, bucket_name
-
-    blob.upload_from_filename(audio_file)
-
-    logger.info(f"File {audio_file} uploaded to gs://{bucket_name}/{blob.name}.")
-    return f"gs://{bucket_name}/{blob.name}", bucket, bucket_name
+    else:
+        blob.upload_from_filename(audio_file)
+        logger.info(f"File {audio_file} uploaded to gs://{bucket_name}/{blob.name}.")
+        return f"gs://{bucket_name}/{blob.name}", bucket, bucket_name
 
 
 def transcribe_gcs(gcs_uri):
@@ -115,7 +117,7 @@ def transcribe_gcs(gcs_uri):
 
     operation = client.long_running_recognize(config=config, audio=audio)
     logger.info("Waiting for operation to complete...")
-    response = operation.result(timeout=300)
+    response = operation.result(timeout=5400)
     return response
 
 
@@ -151,7 +153,6 @@ def ffmpeg_convert_to_wav(audio_file):
     # get the file name and extension
     file_name, file_extension = os.path.splitext(audio_file)
     output_path = os.path.join(os.path.dirname(audio_file), f"{file_name}.wav")
-    # output_path = os.path.join(os.path.dirname(audio_file), "tmp.wav")
     run(
         [
             "ffmpeg",
@@ -165,16 +166,30 @@ def ffmpeg_convert_to_wav(audio_file):
             "16000",
             output_path,
         ]
-    )
+    ,check=True)
     return output_path
 
 
 def main(args):
+    """
+    Putting it together: taking the argument, downloading the video and/or converting audio to WAV,
+    uploading it to GCS, and transcribing it.
+    """
+    # if no arguments given, print help
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
     # Create a temporary directory to store the video and audio files
     output_dir = os.path.join(os.getcwd(), "tmp")
     if args.file:
-        path_to_file = args.file # use the file provided by the user
-        logger.info(f"Using existing file: {path_to_file}")
+        if not args.file.endswith(".wav"):
+            # Convert the audio file to Google Cloud-recommended WAV format
+            path_to_file = ffmpeg_convert_to_wav(args.file)
+            logger.info(f"Converted {args.file} to {path_to_file}")
+        else:
+            path_to_file = args.file  # use the file provided by the user
+            logger.info(f"Using existing file: {path_to_file}")
     else:
         # Download the video from YouTube
         path_to_file = str(download_video(args.url, output_dir))
@@ -224,7 +239,9 @@ if __name__ == "__main__":
     parser = ArgumentParser(
         description="Transcribe a YouTube video using Google Cloud Speech-to-Text API."
     )
-    #parser.add_argument("url", help="YouTube video URL", nargs="?")
-    parser.add_argument("-u", "--url", help="YouTube video URL", required=False, type=str)
-    parser.add_argument("-f", "--file", help="Path to file", required=False,type=str)
+    # parser.add_argument("url", help="YouTube video URL", nargs="?")
+    parser.add_argument(
+        "-u", "--url", help="YouTube video URL", required=False, type=str
+    )
+    parser.add_argument("-f", "--file", help="Path to file", required=False, type=str)
     main(parser.parse_args())
