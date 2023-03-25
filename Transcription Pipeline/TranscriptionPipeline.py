@@ -7,7 +7,7 @@ Functions:
 - download_video(url: str) -> str: Downloads a YouTube video as an mp3 file 
 and returns the path to the audio file.
 
-- transcribe_audio(audio_file: str) -> None: Transcribes the audio file using OpenAI's whisper model
+- transcribe_audio(audio_file: str) -> None: Locally transcribes the audio file using OpenAI's whisper model
 and outputs the text to a file.
 
 Requirements:

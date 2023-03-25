@@ -8,5 +8,4 @@ pyyaml
 pydub
 openai
 tqdm
-yaml
-json
+pyyaml
