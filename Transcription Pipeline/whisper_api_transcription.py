@@ -50,7 +50,7 @@ def download_video(url, output_dir):
     path_to_file = Path(output_dir) / f"{title}.mp3"
 
     ydl_opts = {
-        "outtmpl": os.path.join(output_dir, f"{title}.%(ext)s"),  # Update this line
+        "outtmpl": os.path.join(output_dir, f"{title}.%(ext)s"),
         "writethumbnail": True,
         "format": "mp3/bestaudio/best",
         "postprocessors": [
@@ -199,7 +199,7 @@ def main():
         "--config",
         help="Path to the config file.",
         default="config.yaml",
-        required=False,
+        required=True,
     )
 
     args = parser.parse_args()
