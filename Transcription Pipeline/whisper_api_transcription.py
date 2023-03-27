@@ -21,7 +21,6 @@ from pydub import AudioSegment
 from tqdm import tqdm
 from yt_dlp import YoutubeDL
 
-
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
     level=logging.INFO,
@@ -36,8 +35,9 @@ def sanitize_filename(filename):
     """
     import re
 
-    sanitized = re.sub(r'[\\/*?:"<>|]', '_', filename)
+    sanitized = re.sub(r'[\\/*?:"<>|]', "_", filename)
     return sanitized
+
 
 def download_video(url, output_dir):
     """
@@ -156,7 +156,7 @@ def transcribe_audio(path_to_file, output_dir, config):
             if transcript:
                 transcripts.append(transcript)
                 previous_transcript = transcript["text"]
-        
+
         # Concatenate the transcripts
         full_transcript = {
             "text": "\n".join([t["text"] for t in transcripts]),
@@ -179,7 +179,6 @@ def transcribe_audio(path_to_file, output_dir, config):
         f.write(full_transcript["text"])
 
     return text_path
-
 
 
 def main():
@@ -236,7 +235,6 @@ def main():
 
     transcription = str(transcribe_audio(path_to_file, args.output_dir, config))
 
- 
     # ask to delete the original audio file
     delete_audio = input("Delete original audio file? (y/n): ").lower()
     if delete_audio == "y":
@@ -244,6 +242,7 @@ def main():
         logger.info(f"Deleted {path_to_file}")
 
     logger.info("Done!")
+
 
 if __name__ == "__main__":
     main()
