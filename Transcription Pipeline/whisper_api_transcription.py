@@ -30,6 +30,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def sanitize_filename(filename):
+    """
+    Remove any special characters and replace them with underscores.
+    """
+    import re
+
+    sanitized = re.sub(r'[\\/*?:"<>|]', '_', filename)
+    return sanitized
+
 def download_video(url, output_dir):
     """
     Download the video at 48kbps as a mp3, and retain thumbnail and metadata.
@@ -37,14 +46,11 @@ def download_video(url, output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
     info = YoutubeDL().extract_info(url, download=False)
-    title = info["title"]
+    title = sanitize_filename(info["title"])
     path_to_file = Path(output_dir) / f"{title}.mp3"
-    if path_to_file.is_file():
-        logger.info(f"{title} already downloaded. Skipping this part...")
-        return path_to_file
 
     ydl_opts = {
-        "outtmpl": os.path.join(output_dir, "%(title)s.%(ext)s"),
+        "outtmpl": os.path.join(output_dir, f"{title}.%(ext)s"),  # Update this line
         "writethumbnail": True,
         "format": "mp3/bestaudio/best",
         "postprocessors": [
