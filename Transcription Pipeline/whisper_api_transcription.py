@@ -117,7 +117,7 @@ def transcribe_audio(path_to_file, output_dir, config):
     openai.api_key = config["openai_api_key"]
     os.makedirs(output_dir, exist_ok=True)
     title = Path(path_to_file).stem
-    logger.info(f"Transcribing {title}...")
+    logger.info(f"Transcribing {title}... please wait... this might take a little while...")
 
     params = {
         "model": "whisper-1",
