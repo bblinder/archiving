@@ -4,6 +4,9 @@
 """
 Convert a WebVTT subtitle file to a formatted-ish transcript.
 Useful for summarization and other NLP tasks.
+
+Usage:
+    python3 vtt_to_transcript.py <youtube_url or vtt_file>
 """
 
 import argparse
