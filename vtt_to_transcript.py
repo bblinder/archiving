@@ -10,11 +10,16 @@ Usage:
 """
 
 import argparse
+import logging
 import os
 import re
 import sys
+from pathlib import Path
 
 from yt_dlp import YoutubeDL
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def download_vtt(url: str) -> str:
@@ -85,7 +90,7 @@ def main():
     if any(domain in args.input for domain in youtube_domains):
         input_file = download_vtt(args.input)
         if input_file is None:
-            print("No subtitles available for the requested language.")
+            logging.error("No subtitles available for the requested language.")
             sys.exit(1)
     else:
         input_file = args.input
@@ -116,6 +121,9 @@ def main():
         for file in os.listdir():
             if file.endswith(".vtt"):
                 os.remove(file)
+
+    # print the full path of the output file
+    logging.info(f"Transcript saved to: {Path(output_file).resolve()}")
 
 
 if __name__ == "__main__":
