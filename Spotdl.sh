@@ -13,7 +13,7 @@ for cmd in $COMMANDS; do
     fi
 done
 
-spotdl "$@" --output '{artist} - {title}'
+python3 -m spotdl "$@" --output '{artist} - {title}'
 
 ## TODO
 ## use getops to provide options
