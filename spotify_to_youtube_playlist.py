@@ -5,6 +5,7 @@ import os
 import pickle
 import re
 from urllib.parse import parse_qs, urlparse
+import time
 
 import requests
 import spotipy
@@ -155,18 +156,19 @@ def add_video_to_youtube_playlist(youtube, playlist_id, video_id, retries=5):
             "resourceId": {"kind": "youtube#video", "videoId": video_id},
         }
     }
-    try:
-        response = (
-            youtube.playlistItems().insert(part="snippet", body=request_body).execute()
-        )
-        return response
-    except HttpError as error:
-        if error.resp.status == 409 and i < retries - 1:
-            sleep_time = 2**i
-            print(f"Retry {i + 1}: Waiting for {sleep_time} seconds before retrying...")
-            time.sleep(sleep_time)
-        else:
-            raise
+    for i in range(retries):
+        try:
+            response = (
+                youtube.playlistItems().insert(part="snippet", body=request_body).execute()
+            )
+            return response
+        except HttpError as error:
+            if error.resp.status == 409 and i < retries - 1:
+                sleep_time = 2**i
+                print(f"Retry {i + 1}: Waiting for {sleep_time} seconds before retrying...")
+                time.sleep(sleep_time)
+            else:
+                raise
 
 
 @tenacity.retry(
