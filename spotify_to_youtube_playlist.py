@@ -15,6 +15,7 @@ from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from googleapiclient.http import BatchHttpRequest
 from spotipy.oauth2 import SpotifyOAuth
 
 # Load Spotify API credentials from environment variables
@@ -33,6 +34,9 @@ sp = spotipy.Spotify(
         scope="playlist-read-private",
     )
 )
+
+
+youtube_search_cache = {}
 
 
 def authenticate_youtube_api():
@@ -146,29 +150,62 @@ def create_youtube_playlist(youtube, playlist_name):
     return response["id"]
 
 
-def add_video_to_youtube_playlist(youtube, playlist_id, video_id, retries=5):
+def handle_playlist_item_insertion(request_id, response, exception):
     """
-    Adding a video to a YouTube playlist.
+    Handling the response from the YouTube API after inserting a playlist item.
     """
-    request_body = {
-        "snippet": {
-            "playlistId": playlist_id,
-            "resourceId": {"kind": "youtube#video", "videoId": video_id},
+    if exception is not None:
+        print(f"Error inserting playlist item (Request ID: {request_id}): {exception}")
+    else:
+        print(f"Successfully inserted playlist item (Request ID: {request_id})")
+
+
+# def add_video_to_youtube_playlist(youtube, playlist_id, video_id, retries=5):
+#     """
+#     Adding a video to a YouTube playlist.
+#     """
+#     request_body = {
+#         "snippet": {
+#             "playlistId": playlist_id,
+#             "resourceId": {"kind": "youtube#video", "videoId": video_id},
+#         }
+#     }
+#     for i in range(retries):
+#         try:
+#             response = (
+#                 youtube.playlistItems().insert(part="snippet", body=request_body).execute()
+#             )
+#             return response
+#         except HttpError as error:
+#             if error.resp.status == 409 and i < retries - 1:
+#                 sleep_time = 2**i
+#                 print(f"Retry {i + 1}: Waiting for {sleep_time} seconds before retrying...")
+#                 time.sleep(sleep_time)
+#             else:
+#                 raise
+
+def add_videos_to_youtube_playlist(youtube, playlist_id, video_ids):
+    """
+    Adding videos to a YouTube playlist using a batch request.
+    """
+
+    batch = youtube.new_batch_http_request(callback=handle_playlist_item_insertion)
+
+    for video_id in video_ids:
+        request_body = {
+            "snippet": {
+                "playlistId": playlist_id,
+                "resourceId": {"kind": "youtube#video", "videoId": video_id},
+            }
         }
-    }
-    for i in range(retries):
-        try:
-            response = (
-                youtube.playlistItems().insert(part="snippet", body=request_body).execute()
-            )
-            return response
-        except HttpError as error:
-            if error.resp.status == 409 and i < retries - 1:
-                sleep_time = 2**i
-                print(f"Retry {i + 1}: Waiting for {sleep_time} seconds before retrying...")
-                time.sleep(sleep_time)
-            else:
-                raise
+        batch.add(
+            youtube.playlistItems().insert(part="snippet", body=request_body),
+            request_id=video_id,
+        )
+    try:
+        batch.execute()
+    except HttpError as error:
+        print(f"Error inserting playlist items: {error}")
 
 
 @tenacity.retry(
@@ -178,12 +215,16 @@ def add_video_to_youtube_playlist(youtube, playlist_id, video_id, retries=5):
 )
 def search_video_on_youtube(youtube, query):
     """Searching for a video on YouTube."""
+    if query in youtube_search_cache:
+        return youtube_search_cache[query]
+
     response = (
         youtube.search()
         .list(q=query, part="id,snippet", type="video", maxResults=1)
         .execute()
     )
     video_id = response["items"][0]["id"]["videoId"]
+    youtube_search_cache[query] = video_id
     return video_id
 
 
@@ -208,8 +249,9 @@ def main():
 
     # Add tracks to the YouTube playlist
     for track in tracks:
-        video_id = search_video_on_youtube(youtube, track)
-        add_video_to_youtube_playlist(youtube, youtube_playlist_id, video_id)
+        video_ids = [search_video_on_youtube(youtube, track) for track in tracks]
+        #video_id = search_video_on_youtube(youtube, track)
+        add_video_to_youtube_playlist(youtube, youtube_playlist_id, video_ids)
 
 
 if __name__ == "__main__":

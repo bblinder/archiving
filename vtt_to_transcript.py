@@ -66,6 +66,17 @@ def capitalize_first_letter(text: str) -> str:
     return re.sub(r"(^|\.\s+)(\w)", lambda m: m.group(1) + m.group(2).upper(), text)
 
 
+def remove_duplicate_lines(lines: list) -> str:
+    """
+    Remove duplicate lines in a string.
+    """
+    unique_lines = []
+    for line in lines:
+        if line not in unique_lines:
+            unique_lines.append(line)
+    return unique_lines
+
+
 def main():
     """
     Main function.
@@ -107,6 +118,9 @@ def main():
         for line in caption.text.strip().splitlines()
         if line != transcript[-len(line) :]
     ]
+
+    # remove duplicate lines
+    lines = remove_duplicate_lines(lines)
 
     transcript = " ".join(lines)
     transcript = capitalize_first_letter(transcript)
