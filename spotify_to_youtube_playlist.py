@@ -251,7 +251,7 @@ def main():
     for track in tracks:
         video_ids = [search_video_on_youtube(youtube, track) for track in tracks]
         #video_id = search_video_on_youtube(youtube, track)
-        add_video_to_youtube_playlist(youtube, youtube_playlist_id, video_ids)
+        add_videos_to_youtube_playlist(youtube, youtube_playlist_id, video_ids)
 
 
 if __name__ == "__main__":
