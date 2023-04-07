@@ -213,20 +213,69 @@ def add_videos_to_youtube_playlist(youtube, playlist_id, video_ids):
     stop=tenacity.stop_after_attempt(5),  # Stop after 5 attempts
     reraise=True,  # Reraise the exception if retries are exhausted
 )
-def search_video_on_youtube(youtube, query):
-    """Searching for a video on YouTube."""
-    if query in youtube_search_cache:
-        return youtube_search_cache[query]
+# def search_video_on_youtube(youtube, query):
+#     """Searching for a video on YouTube."""
+#     if query in youtube_search_cache:
+#         return youtube_search_cache[query]
 
-    response = (
-        youtube.search()
-        .list(q=query, part="id,snippet", type="video", maxResults=1)
-        .execute()
-    )
-    video_id = response["items"][0]["id"]["videoId"]
-    youtube_search_cache[query] = video_id
-    return video_id
+#     response = (
+#         youtube.search()
+#         .list(q=query, part="id,snippet", type="video", maxResults=1)
+#         .execute()
+#     )
+#     video_id = response["items"][0]["id"]["videoId"]
+#     youtube_search_cache[query] = video_id
+#     return video_id
 
+def search_videos_on_youtube(youtube, queries):
+    """
+    Searching for videos on YouTube using a single batch request.
+    """
+    video_ids = []
+    for query in queries:
+        if query in youtube_search_cache:
+            video_ids.append(youtube_search_cache[query])
+        else:
+            response = (
+                youtube.search()
+                .list(q=query, part="id,snippet", type="video", maxResults=1)
+                .execute()
+            )
+            video_id = response["items"][0]["id"]["videoId"]
+            youtube_search_cache[query] = video_id
+            video_ids.append(video_id)
+    return video_ids
+
+# def main():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("url", help="Spotify playlist URL")
+#     args = parser.parse_args()
+
+#     # Get Spotify access token
+#     spotify_access_token = get_spotify_access_token()
+
+#     # Get tracks from Spotify playlist
+#     spotify_playlist_id = str(extract_spotify_id(url=args.url))
+#     tracks = get_spotify_playlist_tracks(spotify_playlist_id, spotify_access_token)
+
+#     # Set up YouTube API client
+#     youtube = authenticate_youtube_api()
+
+#     # Create a YouTube playlist
+#     # playlist name is the same as the Spotify playlist name
+#     playlist_name = sp.playlist(spotify_playlist_id)["name"]
+#     #playlist_name = "Spotify Playlist"
+#     youtube_playlist_id = create_youtube_playlist(youtube, playlist_name)
+
+#     # Add tracks to the YouTube playlist
+#     for track in tracks:
+#         video_ids = [search_video_on_youtube(youtube, track) for track in tracks]
+#         #video_id = search_video_on_youtube(youtube, track)
+#         add_videos_to_youtube_playlist(youtube, youtube_playlist_id, video_ids)
+
+
+# if __name__ == "__main__":
+#     main()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -244,15 +293,12 @@ def main():
     youtube = authenticate_youtube_api()
 
     # Create a YouTube playlist
-    playlist_name = "Spotify Playlist"
+    playlist_name = sp.playlist(spotify_playlist_id)["name"]
     youtube_playlist_id = create_youtube_playlist(youtube, playlist_name)
 
-    # Add tracks to the YouTube playlist
-    for track in tracks:
-        video_ids = [search_video_on_youtube(youtube, track) for track in tracks]
-        #video_id = search_video_on_youtube(youtube, track)
-        add_videos_to_youtube_playlist(youtube, youtube_playlist_id, video_ids)
-
+    # Search for videos on YouTube and add them to the playlist
+    video_ids = search_videos_on_youtube(youtube, tracks)
+    add_videos_to_youtube_playlist(youtube, youtube_playlist_id, video_ids)
 
 if __name__ == "__main__":
     main()
