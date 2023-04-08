@@ -6,7 +6,7 @@ Convert a WebVTT subtitle file to a formatted-ish transcript.
 Useful for summarization and other NLP tasks.
 
 Usage:
-    python3 vtt_to_transcript.py <youtube_url or vtt_file>
+    python3 vtt_to_transcript.py <video_url or vtt_file>
 """
 
 import argparse
@@ -15,6 +15,7 @@ import os
 import re
 import sys
 from pathlib import Path
+import validators
 
 from yt_dlp import YoutubeDL
 
@@ -24,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 def download_vtt(url: str) -> str:
     """
-    Download a VTT file from YouTube. Default: en-US.
+    Download a VTT file using yt-dlp. Default: en-US.
     """
     subtitle_formats = [
         "en",
@@ -46,7 +47,7 @@ def download_vtt(url: str) -> str:
         title = info["title"]
 
         # Download subtitles
-        available_subtitles = info["requested_subtitles"]
+        available_subtitles = info.get("requested_subtitles", {})
 
         for subtitle_format in subtitle_formats:
             if subtitle_format in available_subtitles:
@@ -66,15 +67,30 @@ def capitalize_first_letter(text: str) -> str:
     return re.sub(r"(^|\.\s+)(\w)", lambda m: m.group(1) + m.group(2).upper(), text)
 
 
-def remove_duplicate_lines(lines: list) -> str:
+def remove_duplicate_lines(lines: list) -> list:
     """
-    Remove duplicate lines in a string.
+    Remove duplicate lines in a list.
     """
-    unique_lines = []
-    for line in lines:
-        if line not in unique_lines:
-            unique_lines.append(line)
-    return unique_lines
+    return list(dict.fromkeys(lines))
+
+
+def validate_input(input: str) -> str:
+    """
+    Validate input.
+    """
+    http_regex = re.compile(r"^https?://")
+
+    if http_regex.match(input):
+        if not validators.url(input):
+            logging.error("Invalid URL.")
+            sys.exit(1)
+        else:
+            return download_vtt(input)
+    elif Path(input).exists():
+        return input
+    else:
+        logging.error("Invalid input.")
+        sys.exit(1)
 
 
 def main():
@@ -90,21 +106,8 @@ def main():
     parser.add_argument("input", help="Input file")
     args = parser.parse_args()
 
-    youtube_domains = [
-        "youtube.com",
-        "youtu.be",
-        "youtube-nocookie.com",
-        "m.youtube.com",
-    ]
-
-    # if input_file is a YouTube URL, download the VTT file
-    if any(domain in args.input for domain in youtube_domains):
-        input_file = download_vtt(args.input)
-        if input_file is None:
-            logging.error("No subtitles available for the requested language.")
-            sys.exit(1)
-    else:
-        input_file = args.input
+    # Validate input and get the VTT file path
+    input_file = validate_input(args.input)
 
     output_title = input_file.split(".")[0]
     output_file = f"{output_title}_formatted.txt"
@@ -116,10 +119,10 @@ def main():
         line.strip()
         for caption in vtt
         for line in caption.text.strip().splitlines()
-        if line != transcript[-len(line) :]
+        if line not in transcript[-len(line):]
     ]
 
-    # remove duplicate lines
+    # Remove duplicate lines
     lines = remove_duplicate_lines(lines)
 
     transcript = " ".join(lines)
@@ -128,17 +131,17 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(transcript)
 
-    # after transcript is generated, delete the VTT files
-    if any(domain in args.input for domain in youtube_domains):
+    # After the transcript is generated, delete the VTT files
+    if input_file.endswith(".vtt"):
         os.remove(input_file)
-        # remove all VTT files
+        # Remove all VTT files
         for file in os.listdir():
             if file.endswith(".vtt"):
                 os.remove(file)
 
-    # print the full path of the output file
+    # Print the full path of the output file
     logging.info(f"Transcript saved to: {Path(output_file).resolve()}")
-
+    logging.info("Done.")
 
 if __name__ == "__main__":
     main()
