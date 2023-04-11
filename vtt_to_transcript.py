@@ -103,7 +103,7 @@ def main():
         raise ImportError("Please install webvtt-py: pip install webvtt-py")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", help="Input file")
+    parser.add_argument("input", help="Input file or URL.")
     args = parser.parse_args()
 
     # Validate input and get the VTT file path
