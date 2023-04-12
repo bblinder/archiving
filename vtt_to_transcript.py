@@ -33,20 +33,25 @@ def download_vtt(url: str) -> str:
         "en-en",
     ]
 
+    with YoutubeDL({"skip_download": True}) as ydl:
+        info = ydl.extract_info(url, download=False)
+        title = info["title"]
+
+        # Sanitize the title
+        sanitized_title = re.sub(r"[^\w\-]+", "_", title)
+        sanitized_title = re.sub(r"_+", "_", sanitized_title)
+
     ydl_opts = {
         "skip_download": True,
         "writesubtitles": True,
         "writeautomaticsub": True,
         "subtitleslangs": subtitle_formats,
         "subtitlesformat": "vtt",
-        "outtmpl": "%(title)s.%(ext)s",
+        "outtmpl": f"{sanitized_title}.%(ext)s",
     }
 
     with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        title = info["title"]
-
-        # Download subtitles
+        info = ydl.extract_info(url, download=False)  # Add this line
         available_subtitles = info.get("requested_subtitles", {})
 
         for subtitle_format in subtitle_formats:
@@ -54,7 +59,7 @@ def download_vtt(url: str) -> str:
                 ydl_opts["subtitleslangs"] = [subtitle_format]
                 with YoutubeDL(ydl_opts) as ydl_download:
                     ydl_download.download([url])
-                output_name = f"{title}.{subtitle_format}.vtt"
+                output_name = f"{sanitized_title}.{subtitle_format}.vtt"
                 return output_name
 
     return None
