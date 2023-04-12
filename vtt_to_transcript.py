@@ -15,12 +15,25 @@ import os
 import re
 import sys
 from pathlib import Path
-import validators
 
+import validators
 from yt_dlp import YoutubeDL
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+
+def sanitize_title(title: str) -> str:
+    """
+    Sanitize a title by removing special characters and replacing with underscores.
+    """
+    if re.search(r"[\w\-]+", title):
+        sanitized_title = re.sub(r"[^\w\-]+", "_", title)
+        sanitized_title = re.sub(r"_+", "_", sanitized_title)
+        return sanitized_title
+    return title
 
 
 def download_vtt(url: str) -> str:
@@ -37,9 +50,7 @@ def download_vtt(url: str) -> str:
         info = ydl.extract_info(url, download=False)
         title = info["title"]
 
-        # Sanitize the title
-        sanitized_title = re.sub(r"[^\w\-]+", "_", title)
-        sanitized_title = re.sub(r"_+", "_", sanitized_title)
+        sanitized_title = sanitize_title(title)
 
     ydl_opts = {
         "skip_download": True,
@@ -124,7 +135,7 @@ def main():
         line.strip()
         for caption in vtt
         for line in caption.text.strip().splitlines()
-        if line not in transcript[-len(line):]
+        if line not in transcript[-len(line) :]
     ]
 
     # Remove duplicate lines
@@ -147,6 +158,7 @@ def main():
     # Print the full path of the output file
     logging.info(f"Transcript saved to: {Path(output_file).resolve()}")
     logging.info("Done.")
+
 
 if __name__ == "__main__":
     main()
