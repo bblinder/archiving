@@ -1,0 +1,67 @@
+#!/usr/bin/osascript
+
+set backupPath to "~/Dropbox/Backups/Bear"
+set osVersion to {system attribute "sys1", system attribute "sys2", system attribute "sys3"}
+
+-- Launch/switch to Bear
+set previousFrontmostApp to (path to frontmost application) as text
+activate application "Bear"
+repeat until application "Bear" is running
+    delay 0.5
+end repeat
+delay 0.5
+
+tell application "System Events"
+    tell process "Bear"
+        click menu item "Backup Notes..." of menu "File" of menu bar 1
+
+        -- Wait for the file dialog to appear
+        repeat until window "Please choose the location where the notes will be saved" exists
+            delay 0.5
+        end repeat
+        delay 0.5
+
+        tell window "Please choose the location where the notes will be saved"
+            -- Use the Cmd+Shift+G "go to folder" shortcut
+            keystroke "g" using {command down, shift down}
+
+            -- Wait for the "go to folder" window to appear
+            repeat until sheet 1 exists
+                delay 0.5
+            end repeat
+            delay 0.5
+
+            -- Navigate to the backup folder
+            tell sheet 1
+                if item 1 of osVersion < 12 then
+                    -- Classic "go to folder" dialog
+                    set value of combo box 1 to backupPath
+                    click button "Go"
+                else
+                    -- Monterey updated "go to folder" to a Spotlight-esque command palette
+                    set value of text field 1 to backupPath
+                    key code 36
+                end if
+            end tell
+
+            -- Wait for the "go to folder" window to close
+            repeat while sheet 1 exists
+                delay 0.5
+            end repeat
+            delay 0.5
+
+            click button "Export notes"
+        end tell
+
+        -- Wait for the untitled backup progress window to appear, then close
+        repeat until window "Window" exists
+            delay 0.5
+        end repeat
+        repeat while window "Window" exists
+            delay 0.5
+        end repeat
+    end tell
+end tell
+
+-- Switch back to previously activated app
+activate application previousFrontmostApp
