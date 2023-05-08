@@ -7,4 +7,4 @@ halo
 click
 rich
 simple-colors
-
+pysrt
