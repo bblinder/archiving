@@ -19,6 +19,11 @@ from pathlib import Path
 import validators
 from yt_dlp import YoutubeDL
 
+try:
+    import webvtt
+except ImportError:
+    raise ImportError("Please install webvtt-py: pip install webvtt-py")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -113,10 +118,6 @@ def main():
     """
     Main function.
     """
-    try:
-        import webvtt
-    except ImportError:
-        raise ImportError("Please install webvtt-py: pip install webvtt-py")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="Input file or URL.")
@@ -149,11 +150,14 @@ def main():
 
     # After the transcript is generated, delete the VTT files
     if input_file.endswith(".vtt"):
-        os.remove(input_file)
+        # ask to delete the input file
+        delete_choice = input("Delete the original .VTT file? [y/n]: ").lower()
+        if delete_choice == "y":
+            os.remove(input_file)
         # Remove all VTT files
-        for file in os.listdir():
-            if file.endswith(".vtt"):
-                os.remove(file)
+        # for file in os.listdir():
+        #     if file.endswith(".vtt"):
+        #         os.remove(file)
 
     # Print the full path of the output file
     logging.info(f"Transcript saved to: {Path(output_file).resolve()}")
