@@ -14,7 +14,7 @@ import os
 SHORTCUT_NAME = "Extract Text"
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
 def is_macos():
@@ -53,7 +53,7 @@ def run_ocr(file_path):
     try:
         validate_file_path(file_path)
         command = ["shortcuts", "run", SHORTCUT_NAME, "-i", file_path]
-        ocr_out = subprocess.check_output(command).decode('utf-8')
+        ocr_out = subprocess.check_output(command).decode("utf-8")
         logging.info(ocr_out)
     except subprocess.CalledProcessError as e:
         logging.error(f"An error occurred while running the OCR: {str(e)}")
@@ -64,7 +64,10 @@ def run_ocr(file_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run OCR on a file using MacOS's OCR Text shortcut.")
+    """Putting it all together."""
+    parser = argparse.ArgumentParser(
+        description="Run OCR on a file using MacOS's OCR Text shortcut."
+    )
     parser.add_argument("file", help="Path to the file for OCR.")
     args = parser.parse_args()
 
