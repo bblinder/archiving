@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import sys
+import contextlib
 from pathlib import Path
 
 import validators
@@ -26,8 +27,25 @@ except ImportError:
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+
+@contextlib.contextmanager
+def suppress_output():
+    """
+    A context manager to redirect stdout and stderr to devnull
+    """
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
 
 def sanitize_title(title: str) -> str:
@@ -45,38 +63,42 @@ def download_vtt(url: str) -> str:
     """
     Download a VTT file using yt-dlp. Default: en-US.
     """
+
     subtitle_formats = [
         "en",
         "en-US",
         "en-en",
     ]
 
-    with YoutubeDL({"skip_download": True}) as ydl:
-        info = ydl.extract_info(url, download=False)
-        title = info["title"]
+    with suppress_output():
+        with YoutubeDL({"skip_download": True}) as ydl:
+            info = ydl.extract_info(url, download=False)
+            title = info["title"]
 
-        sanitized_title = sanitize_title(title)
+            sanitized_title = sanitize_title(title)
 
-    ydl_opts = {
-        "skip_download": True,
-        "writesubtitles": True,
-        "writeautomaticsub": True,
-        "subtitleslangs": subtitle_formats,
-        "subtitlesformat": "vtt",
-        "outtmpl": f"{sanitized_title}.%(ext)s",
-    }
+        ydl_opts = {
+            "skip_download": True,
+            "writesubtitles": True,
+            "writeautomaticsub": True,
+            "subtitleslangs": subtitle_formats,
+            "subtitlesformat": "vtt",
+            "quiet": True,
+            "logger": None,
+            "outtmpl": f"{sanitized_title}.%(ext)s",
+        }
 
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)  # Add this line
-        available_subtitles = info.get("requested_subtitles", {})
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            available_subtitles = info.get("requested_subtitles", {})
 
-        for subtitle_format in subtitle_formats:
-            if subtitle_format in available_subtitles:
-                ydl_opts["subtitleslangs"] = [subtitle_format]
-                with YoutubeDL(ydl_opts) as ydl_download:
-                    ydl_download.download([url])
-                output_name = f"{sanitized_title}.{subtitle_format}.vtt"
-                return output_name
+            for subtitle_format in subtitle_formats:
+                if subtitle_format in available_subtitles:
+                    ydl_opts["subtitleslangs"] = [subtitle_format]
+                    with YoutubeDL(ydl_opts) as ydl_download:
+                        ydl_download.download([url])
+                    output_name = f"{sanitized_title}.{subtitle_format}.vtt"
+                    return output_name
 
     return None
 
@@ -121,6 +143,12 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="Input file or URL.")
+    parser.add_argument(
+        "-d",
+        "--delete",
+        help="Delete the original .VTT file after processing.",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     # Validate input and get the VTT file path
@@ -145,24 +173,23 @@ def main():
     transcript = " ".join(lines)
     transcript = capitalize_first_letter(transcript)
 
+    # Save the transcript to a file
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(transcript)
 
-    # After the transcript is generated, delete the VTT files
-    if input_file.endswith(".vtt"):
-        # ask to delete the input file
-        delete_choice = input("Delete the original .VTT file? [y/n]: ").lower()
-        if delete_choice == "y":
-            os.remove(input_file)
-        # Remove all VTT files
-        # for file in os.listdir():
-        #     if file.endswith(".vtt"):
-        #         os.remove(file)
-
     # Print the full path of the output file
-    logging.info(f"Transcript saved to: {Path(output_file).resolve()}")
-    logging.info("Done.")
+    final_path = Path(output_file).resolve()
+    # logging.info(f"Transcript saved to: {final_path}")
+    # logging.info("Done.")
+
+    # Delete the original VTT file
+    if args.delete:
+        os.remove(input_file)
+        logging.info(f"Deleted: {input_file}")
+
+    print(str(final_path))
+    return final_path
 
 
 if __name__ == "__main__":
-    main()
+    final_path = main()
