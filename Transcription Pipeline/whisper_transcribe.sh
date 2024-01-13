@@ -1,58 +1,93 @@
 #!/usr/bin/env bash
 
-# This script transcribes audio files using the Whisper library
+# Enhanced script to transcribe audio files using the Whisper library
 # Requires: Whisper, FFmpeg
-# Usage: ./whisper_transcribe.sh [audio file] [text format]
+# Usage: ./whisper_transcribe.sh [audio file] [text format] [optional: whisper model]
 
 set -euo pipefail
 
+LOG_FILE="transcribe.log"
+VALID_FORMATS=("txt" "json" "srt" "all")
+DEFAULT_MODEL="medium.en"
+
 display_help() {
-    echo "Usage: $0 [audio file] [text format]"
+    echo "Transcribes audio files using Whisper."
+    echo "Usage: $0 [audio file] [text format] [optional: whisper model]"
     echo ""
     echo "Arguments:"
-    echo "  audio file: path to audio file"
-    echo "  text format: text format to output (example: 'txt', 'json', 'srt', 'all')"
+    echo "  audio file: path to the audio file"
+    echo "  text format: output format (txt, json, srt, all)"
+    echo "  whisper model: optional, Whisper model to use (e.g., 'tiny', 'base'). Default: $DEFAULT_MODEL"
+    echo ""
+    echo "Example: $0 sample.mp3 txt"
+}
+
+log() {
+    echo "$(date): $*" >> "$LOG_FILE"
 }
 
 check_dependencies() {
     if ! command -v whisper &> /dev/null ; then
-        echo "::: Whisper could not be found"
+        log "::: Whisper could not be found"
         exit 1
     fi
 
     if ! command -v ffmpeg &> /dev/null ; then
-        echo "::: FFmpeg could not be found"
+        log "::: FFmpeg could not be found"
         exit 1
     fi
 }
 
 validate_input() {
-    # if no input file is provided
     if [[ -z "$AUDIO_FILE" ]]; then
-        echo "::: No audio file provided"
+        log "::: No audio file provided"
         exit 1
     fi
 
-    # check if the input file exists
     if [[ ! -f "$AUDIO_FILE" ]]; then
-        echo "::: Input file does not exist"
+        log "::: Input file does not exist"
+        exit 1
+    fi
+
+    if [[ ! " ${VALID_FORMATS[*]} " =~ " ${TEXT_FORMAT} " ]]; then
+        log "::: Invalid text format provided"
         exit 1
     fi
 }
 
 transcribe() {
-    whisper --model medium.en "$AUDIO_FILE" -f "$TEXT_FORMAT" --task transcribe
+    if ! whisper --model "$MODEL" "$AUDIO_FILE" -f "$TEXT_FORMAT" --task transcribe; then
+        log "::: Transcription failed"
+        exit 1
+    fi
 }
 
-if [[ "$#" -eq 0 ]]; then
-    display_help
-    exit 1
-fi
+post_process() {
+    # Add your post-processing commands here
+    log "::: Post-processing completed"
+}
 
-# get arguments
+# Argument Parsing
+while getopts "h" opt; do
+    case $opt in
+        h) display_help
+           exit 0
+           ;;
+        \?) echo "Invalid option -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Shift off the options and optional --
+shift $((OPTIND-1))
+
+# Get Arguments
 AUDIO_FILE="$1"
-TEXT_FORMAT="$2"
+TEXT_FORMAT="${2:-txt}"
+MODEL="${3:-$DEFAULT_MODEL}"
 
 check_dependencies
 validate_input
 transcribe
+post_process
