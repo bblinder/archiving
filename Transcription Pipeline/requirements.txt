@@ -1,4 +1,4 @@
-# openai-whisper
+openai-whisper
 rich
 yt-dlp
 halo
