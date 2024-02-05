@@ -8,3 +8,4 @@ click
 rich
 simple-colors
 pysrt
+deepmultilingualpunctuation
