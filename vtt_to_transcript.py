@@ -92,6 +92,10 @@ def download_vtt(url: str) -> str:
             info = ydl.extract_info(url, download=False)
             available_subtitles = info.get("requested_subtitles", {})
 
+            if not available_subtitles:
+                logging.error("No subtitles available.")
+                return None
+
             for subtitle_format in subtitle_formats:
                 if subtitle_format in available_subtitles:
                     ydl_opts["subtitleslangs"] = [subtitle_format]
@@ -142,6 +146,7 @@ def restore_punctuation(text: str) -> str:
     model = PunctuationModel()
     return model.restore_punctuation(text)
 
+
 def main():
     """
     Main function.
@@ -159,6 +164,11 @@ def main():
 
     # Validate input and get the VTT file path
     input_file = validate_input(args.input)
+
+    # check if input is None
+    if input_file is None:
+        logging.error("Failed to download or otherwise find the VTT file.")
+        sys.exit(1)
 
     output_title = input_file.split(".")[0]
     output_file = f"{output_title}_formatted.txt"
@@ -195,6 +205,7 @@ def main():
 
     print(str(final_path))
     return final_path
+
 
 if __name__ == "__main__":
     final_path = main()
