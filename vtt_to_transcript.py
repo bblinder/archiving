@@ -136,6 +136,12 @@ def validate_input(input: str) -> str:
         sys.exit(1)
 
 
+def restore_punctuation(text: str) -> str:
+    from deepmultilingualpunctuation import PunctuationModel
+
+    model = PunctuationModel()
+    return model.restore_punctuation(text)
+
 def main():
     """
     Main function.
@@ -173,23 +179,22 @@ def main():
     transcript = " ".join(lines)
     transcript = capitalize_first_letter(transcript)
 
+    # Restore punctuation
+    transcript = restore_punctuation(transcript)
+
     # Save the transcript to a file
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(transcript)
 
     # Print the full path of the output file
     final_path = Path(output_file).resolve()
-    # logging.info(f"Transcript saved to: {final_path}")
-    # logging.info("Done.")
 
     # Delete the original VTT file
     if args.delete:
         os.remove(input_file)
-        logging.info(f"Deleted: {input_file}")
 
     print(str(final_path))
     return final_path
-
 
 if __name__ == "__main__":
     final_path = main()
