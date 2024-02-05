@@ -16,6 +16,7 @@ import re
 import sys
 import contextlib
 from pathlib import Path
+from yaspin import yaspin
 
 import validators
 from yt_dlp import YoutubeDL
@@ -36,7 +37,7 @@ def suppress_output():
     """
     A context manager to redirect stdout and stderr to devnull
     """
-    with open(os.devnull, "w") as devnull:
+    with open(os.devnull, "w", encoding="utf-8") as devnull:
         old_stdout = sys.stdout
         old_stderr = sys.stderr
         sys.stdout = devnull
@@ -70,39 +71,40 @@ def download_vtt(url: str) -> str:
         "en-en",
     ]
 
-    with suppress_output():
-        with YoutubeDL({"skip_download": True}) as ydl:
-            info = ydl.extract_info(url, download=False)
-            title = info["title"]
+    with yaspin(text="Downloading VTT file...", color="yellow") as sp:
+        with suppress_output():
+            with YoutubeDL({"skip_download": True}) as ydl:
+                info = ydl.extract_info(url, download=False)
+                title = info["title"]
 
-            sanitized_title = sanitize_title(title)
+                sanitized_title = sanitize_title(title)
 
-        ydl_opts = {
-            "skip_download": True,
-            "writesubtitles": True,
-            "writeautomaticsub": True,
-            "subtitleslangs": subtitle_formats,
-            "subtitlesformat": "vtt",
-            "quiet": True,
-            "logger": None,
-            "outtmpl": f"{sanitized_title}.%(ext)s",
-        }
+            ydl_opts = {
+                "skip_download": True,
+                "writesubtitles": True,
+                "writeautomaticsub": True,
+                "subtitleslangs": subtitle_formats,
+                "subtitlesformat": "vtt",
+                "quiet": True,
+                "logger": None,
+                "outtmpl": f"{sanitized_title}.%(ext)s",
+            }
 
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            available_subtitles = info.get("requested_subtitles", {})
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                available_subtitles = info.get("requested_subtitles", {})
 
-            if not available_subtitles:
-                logging.error("No subtitles available.")
-                return None
+                if not available_subtitles:
+                    logging.error("No subtitles available.")
+                    return None
 
-            for subtitle_format in subtitle_formats:
-                if subtitle_format in available_subtitles:
-                    ydl_opts["subtitleslangs"] = [subtitle_format]
-                    with YoutubeDL(ydl_opts) as ydl_download:
-                        ydl_download.download([url])
-                    output_name = f"{sanitized_title}.{subtitle_format}.vtt"
-                    return output_name
+                for subtitle_format in subtitle_formats:
+                    if subtitle_format in available_subtitles:
+                        ydl_opts["subtitleslangs"] = [subtitle_format]
+                        with YoutubeDL(ydl_opts) as ydl_download:
+                            ydl_download.download([url])
+                        output_name = f"{sanitized_title}.{subtitle_format}.vtt"
+                        return output_name
 
     return None
 
@@ -141,6 +143,9 @@ def validate_input(input: str) -> str:
 
 
 def restore_punctuation(text: str) -> str:
+    """
+    Restore punctuation to a string/transcript
+    """
     from deepmultilingualpunctuation import PunctuationModel
 
     model = PunctuationModel()
@@ -149,7 +154,7 @@ def restore_punctuation(text: str) -> str:
 
 def main():
     """
-    Main function.
+    Downloading the VTT, processing the transcript, and saving the output.
     """
 
     parser = argparse.ArgumentParser()
@@ -173,38 +178,39 @@ def main():
     output_title = input_file.split(".")[0]
     output_file = f"{output_title}_formatted.txt"
 
-    vtt = webvtt.read(input_file)
-    transcript = ""
+    with yaspin(text="Processing transcript...", color="green") as sp:
+        vtt = webvtt.read(input_file)
+        transcript = ""
 
-    lines = [
-        line.strip()
-        for caption in vtt
-        for line in caption.text.strip().splitlines()
-        if line not in transcript[-len(line) :]
-    ]
+        lines = [
+            line.strip()
+            for caption in vtt
+            for line in caption.text.strip().splitlines()
+            if line not in transcript[-len(line) :]
+        ]
 
-    # Remove duplicate lines
-    lines = remove_duplicate_lines(lines)
+        # Remove duplicate lines
+        lines = remove_duplicate_lines(lines)
 
-    transcript = " ".join(lines)
-    transcript = capitalize_first_letter(transcript)
+        transcript = " ".join(lines)
+        transcript = capitalize_first_letter(transcript)
 
-    # Restore punctuation
-    transcript = restore_punctuation(transcript)
+        # Restore punctuation
+        transcript = restore_punctuation(transcript)
 
-    # Save the transcript to a file
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write(transcript)
+        # Save the transcript to a file
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(transcript)
 
-    # Print the full path of the output file
-    final_path = Path(output_file).resolve()
+        # Print the full path of the output file
+        final_path = Path(output_file).resolve()
 
-    # Delete the original VTT file
-    if args.delete:
-        os.remove(input_file)
+        # Delete the original VTT file
+        if args.delete:
+            os.remove(input_file)
 
-    print(str(final_path))
-    return final_path
+        print(str(final_path))
+        return final_path
 
 
 if __name__ == "__main__":
