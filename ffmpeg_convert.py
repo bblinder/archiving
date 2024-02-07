@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" A script to convert a video downloaded with yt-dlp to an audio format"""
+""" A script to convert a video downloaded with yt-dlp to an audio format using ffmpeg."""
 
 import argparse
 import os
@@ -8,40 +8,38 @@ import subprocess
 import sys
 from shutil import which
 
-parser = argparse.ArgumentParser(description="Convert audio files to mp3")
-parser.add_argument("audio_file", help="audio file to convert")
-args = parser.parse_args()
-
-# Checking if ffmpeg is installed
-if not which("ffmpeg"):
-    print("ffmpeg is not installed")
-    sys.exit(1)
-
-formats = [".m4a", ".webm", ".opus", ".mkv", ".ogg", ".wav", ".flac"]
-# auto-detect file extension
-# formats = []
-# for format in subprocess.run(["ffmpeg", "-formats"], capture_output=True).stdout.decode().splitlines():
-#     if format.startswith(" D "):
-#         formats.append(format.split()[1])
-
-file_path = os.path.dirname(args.audio_file)
+# Define supported audio formats
+SUPPORTED_FORMATS = [".m4a", ".webm", ".opus", ".mkv", ".ogg", ".wav", ".flac"]
 
 
-def mp3_convert(audio_file):
-    """Convert file to mp3. If file is already mp3, do nothing"""
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Convert audio files to mp3")
+    parser.add_argument("audio_file", help="audio file to convert")
+    return parser.parse_args()
 
-    if not os.path.isfile(audio_file):
-        print("::: File not specified.")
+
+def check_ffmpeg_installed():
+    """Check if ffmpeg is installed."""
+    if not which("ffmpeg"):
+        print("Error: ffmpeg is not installed.", file=sys.stderr)
         sys.exit(1)
 
-    if audio_file.endswith(".mp3"):
-        print("::: File is already mp3. Exiting...")
-        sys.exit(0)
-    else:
-        file_name = os.path.splitext(audio_file)[0]
-        file_ext = os.path.splitext(audio_file)[1]
-        if file_ext in formats:
-            new_file = file_name + ".mp3"
+
+def convert_to_mp3(audio_file):
+    """Convert an audio file to MP3 format."""
+    if not os.path.isfile(audio_file):
+        print("Error: File does not exist.", file=sys.stderr)
+        sys.exit(1)
+
+    file_name, file_ext = os.path.splitext(audio_file)
+    if file_ext.lower() == ".mp3":
+        print("File is already in mp3 format. Exiting...")
+        return
+
+    if file_ext.lower() in SUPPORTED_FORMATS:
+        new_file = f"{file_name}.mp3"
+        try:
             subprocess.run(
                 [
                     "ffmpeg",
@@ -55,14 +53,23 @@ def mp3_convert(audio_file):
                 ],
                 check=True,
             )
+            print(f"Conversion successful: {new_file}")
             os.remove(audio_file)
-        else:
-            print("\nFile doesn't match any of the supported formats:")
-            # print formats as bullet points
-            for f in formats:
-                print(f"* {f}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error during conversion: {e}", file=sys.stderr)
             sys.exit(1)
+    else:
+        print("File format not supported for conversion. Supported formats are:")
+        for fmt in SUPPORTED_FORMATS:
+            print(f"* {fmt}")
+        sys.exit(1)
+
+
+def main():
+    args = parse_arguments()
+    check_ffmpeg_installed()
+    convert_to_mp3(args.audio_file)
 
 
 if __name__ == "__main__":
-    mp3_convert(args.audio_file)
+    main()
