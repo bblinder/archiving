@@ -10,6 +10,7 @@ Usage:
 """
 
 import argparse
+import html
 import logging
 import os
 import re
@@ -31,7 +32,6 @@ logging.basicConfig(
     level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-
 @contextlib.contextmanager
 def suppress_output():
     """
@@ -48,7 +48,6 @@ def suppress_output():
             sys.stdout = old_stdout
             sys.stderr = old_stderr
 
-
 def sanitize_title(title: str) -> str:
     """
     Sanitize a title by removing special characters and replacing with underscores.
@@ -59,17 +58,11 @@ def sanitize_title(title: str) -> str:
         return sanitized_title
     return title
 
-
 def download_vtt(url: str) -> str:
     """
     Download a VTT file using yt-dlp. Default: en-US.
     """
-
-    subtitle_formats = [
-        "en",
-        "en-US",
-        "en-en",
-    ]
+    subtitle_formats = ["en", "en-US", "en-en"]
 
     with yaspin(text="Downloading VTT file...", color="yellow") as sp:
         with suppress_output():
@@ -105,9 +98,7 @@ def download_vtt(url: str) -> str:
                             ydl_download.download([url])
                         output_name = f"{sanitized_title}.{subtitle_format}.vtt"
                         return output_name
-
     return None
-
 
 def capitalize_first_letter(text: str) -> str:
     """
@@ -115,13 +106,11 @@ def capitalize_first_letter(text: str) -> str:
     """
     return re.sub(r"(^|\.\s+)(\w)", lambda m: m.group(1) + m.group(2).upper(), text)
 
-
 def remove_duplicate_lines(lines: list) -> list:
     """
     Remove duplicate lines in a list.
     """
     return list(dict.fromkeys(lines))
-
 
 def validate_input(input: str) -> str:
     """
@@ -141,6 +130,20 @@ def validate_input(input: str) -> str:
         logging.error("Invalid input.")
         sys.exit(1)
 
+def format_transcript(text: str) -> str:
+    """
+    Format the transcript text by fixing HTML entities and normalizing spaces.
+    """
+    # Unescape HTML entities
+    text = html.unescape(text)
+    
+    # Normalize spaces (replace multiple spaces with a single space)
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Trim spaces before punctuation (optional, based on preference)
+    text = re.sub(r'\s+([,.])', r'\1', text)
+    
+    return text
 
 def restore_punctuation(text: str) -> str:
     """
@@ -150,7 +153,6 @@ def restore_punctuation(text: str) -> str:
 
     model = PunctuationModel()
     return model.restore_punctuation(text)
-
 
 def main():
     """
@@ -198,6 +200,9 @@ def main():
         # Restore punctuation
         transcript = restore_punctuation(transcript)
 
+        # Format the transcript
+        transcript = format_transcript(transcript)
+
         # Save the transcript to a file
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(transcript)
@@ -212,6 +217,5 @@ def main():
         print(str(final_path))
         return final_path
 
-
 if __name__ == "__main__":
-    final_path = main()
+    main()
