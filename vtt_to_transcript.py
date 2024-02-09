@@ -32,6 +32,7 @@ logging.basicConfig(
     level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+
 @contextlib.contextmanager
 def suppress_output():
     """
@@ -48,6 +49,7 @@ def suppress_output():
             sys.stdout = old_stdout
             sys.stderr = old_stderr
 
+
 def sanitize_title(title: str) -> str:
     """
     Sanitize a title by removing special characters and replacing with underscores.
@@ -57,6 +59,7 @@ def sanitize_title(title: str) -> str:
         sanitized_title = re.sub(r"_+", "_", sanitized_title)
         return sanitized_title
     return title
+
 
 def download_vtt(url: str) -> str:
     """
@@ -100,17 +103,20 @@ def download_vtt(url: str) -> str:
                         return output_name
     return None
 
+
 def capitalize_first_letter(text: str) -> str:
     """
     Capitalize the first letter of each sentence in a string.
     """
     return re.sub(r"(^|\.\s+)(\w)", lambda m: m.group(1) + m.group(2).upper(), text)
 
+
 def remove_duplicate_lines(lines: list) -> list:
     """
     Remove duplicate lines in a list.
     """
     return list(dict.fromkeys(lines))
+
 
 def validate_input(input: str) -> str:
     """
@@ -130,20 +136,22 @@ def validate_input(input: str) -> str:
         logging.error("Invalid input.")
         sys.exit(1)
 
+
 def format_transcript(text: str) -> str:
     """
     Format the transcript text by fixing HTML entities and normalizing spaces.
     """
     # Unescape HTML entities
     text = html.unescape(text)
-    
+
     # Normalize spaces (replace multiple spaces with a single space)
-    text = re.sub(r'\s+', ' ', text)
-    
+    text = re.sub(r"\s+", " ", text)
+
     # Trim spaces before punctuation (optional, based on preference)
-    text = re.sub(r'\s+([,.])', r'\1', text)
-    
+    text = re.sub(r"\s+([,.])", r"\1", text)
+
     return text
+
 
 def restore_punctuation(text: str) -> str:
     """
@@ -154,11 +162,31 @@ def restore_punctuation(text: str) -> str:
     model = PunctuationModel()
     return model.restore_punctuation(text)
 
+
+def insert_paragraph_breaks(text: str, sentences_per_paragraph: int = 4) -> str:
+    """
+    Insert paragraph breaks into the text after a specified number of sentences.
+    """
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    paragraphs = []
+    paragraph = []
+
+    for sentence in sentences:
+        paragraph.append(sentence)
+        if len(paragraph) >= sentences_per_paragraph:
+            paragraphs.append(" ".join(paragraph))
+            paragraph = []
+    # Add any remaining sentences as a final paragraph
+    if paragraph:
+        paragraphs.append(" ".join(paragraph))
+
+    return "\n\n".join(paragraphs)
+
+
 def main():
     """
     Downloading the VTT, processing the transcript, and saving the output.
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="Input file or URL.")
     parser.add_argument(
@@ -172,7 +200,7 @@ def main():
     # Validate input and get the VTT file path
     input_file = validate_input(args.input)
 
-    # check if input is None
+    # Check if input is None
     if input_file is None:
         logging.error("Failed to download or otherwise find the VTT file.")
         sys.exit(1)
@@ -203,6 +231,9 @@ def main():
         # Format the transcript
         transcript = format_transcript(transcript)
 
+        # Insert paragraph breaks
+        transcript = insert_paragraph_breaks(transcript, sentences_per_paragraph=4)
+
         # Save the transcript to a file
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(transcript)
@@ -210,12 +241,13 @@ def main():
         # Print the full path of the output file
         final_path = Path(output_file).resolve()
 
-        # Delete the original VTT file
+        # Delete the original VTT file if requested
         if args.delete:
             os.remove(input_file)
 
         print(str(final_path))
         return final_path
+
 
 if __name__ == "__main__":
     main()
