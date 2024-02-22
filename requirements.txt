@@ -10,3 +10,5 @@ simple-colors
 pysrt
 deepmultilingualpunctuation
 yaspin
+validators
+webvtt-py
