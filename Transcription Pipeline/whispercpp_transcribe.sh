@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-# A utility to transcribe audio files in a given directory using ffmpeg and the whisper.cpp library.
-# Adapted from https://www.daginge.com/blog/running-whisper-on-an-m1-mac-to-transcribe-audio-data-locally
-
-# Usage:
-#   ./whispercpp_transcribe.sh -d /path/to/data
-
 set -Eeuo pipefail
 
 # Define script directory for absolute path operations
@@ -17,10 +11,10 @@ MODEL="medium.en"  # Default model
 DATA_DIR=""  # Will be set based on user input
 FORCE_DOWNLOAD=false
 SKIP_COMPILATION=false
+OUTPUT_FORMAT="vtt"  # Default output format
 
 cleanup() {
   trap - SIGINT SIGTERM ERR EXIT
-  # Cleanup logic here, e.g., removing temp directories if needed
   echo "Performing cleanup tasks..."
   [[ -d "$TEMP_OUTPUT_DIR" ]] && rm -rf "$TEMP_OUTPUT_DIR"
 }
@@ -48,11 +42,12 @@ setup_colors() {
 }
 
 usage() {
-  echo "Usage: $0 [-m model_size] [-d data_dir] [-s] [-f]"
+  echo "Usage: $0 [-m model_size] [-d data_dir] [-s] [-f] [-o output_format]"
   echo "  -m, --model            Model size to download and use (default: medium.en)"
   echo "  -d, --data-dir         Directory containing the data files to process"
   echo "  -s, --skip-compilation Skip compilation check"
   echo "  -f, --force-download   Force re-download of the model"
+  echo "  -o, --output-format    Specify output format (vtt or txt, default: vtt)"
   exit 1
 }
 
@@ -68,6 +63,14 @@ parse_params() {
       shift ;;
     -s | --skip-compilation) SKIP_COMPILATION=true ;;
     -f | --force-download) FORCE_DOWNLOAD=true ;;
+    -o | --output-format)
+      if [[ "${2-}" == "vtt" || "${2-}" == "txt" ]]; then
+        OUTPUT_FORMAT="${2-}"
+      else
+        echo "Invalid output format: ${2-}. Use 'vtt' or 'txt'."
+        exit 1
+      fi
+      shift ;;
     --) shift; break ;;
     -?*) usage ;;
     *) break ;;
@@ -89,9 +92,7 @@ DATA_DIR=$(realpath "$DATA_DIR")
 
 # Output directory is set relative to DATA_DIR
 OUTPUT_DIR="$DATA_DIR/output"
-if [[ ! -d "$OUTPUT_DIR" ]]; then
-  mkdir -p "$OUTPUT_DIR"
-fi
+mkdir -p "$OUTPUT_DIR"
 
 # Define and create a temporary output directory within DATA_DIR
 TEMP_OUTPUT_DIR="$DATA_DIR/temp_output"
@@ -108,10 +109,10 @@ fi
 
 if [ "$SKIP_COMPILATION" = false ]; then
   if [ ! -f "./main" ]; then
-      echo "Project not compiled, compiling now..."
-      make
+    echo "Project not compiled, compiling now..."
+    make
   else
-      echo "Project already compiled."
+    echo "Project already compiled."
   fi
 else
   echo "Skipping compilation check as requested."
@@ -137,19 +138,21 @@ for ext in "${media_extensions[@]}"; do
     
     # Temporarily copy the converted file to the Whisper directory
     cp "$converted_path" "$WHISPER_DIR/data/"
-    # Run the transcription
-    "$WHISPER_DIR/main" -m "$WHISPER_DIR/models/ggml-${MODEL}.bin" -l en --output-vtt -f "$WHISPER_DIR/data/${filename}.wav"
     
-    # Correctly account for the .wav extension in the .vtt filename
-    vtt_filename="${filename}.wav.vtt"
+    # Run the transcription with the specified output format
+    "$WHISPER_DIR/main" -m "$WHISPER_DIR/models/ggml-${MODEL}.bin" -l en --output-${OUTPUT_FORMAT} -pc -pp -f "$WHISPER_DIR/data/${filename}.wav"
     
-    # Move the .vtt file to the temporary output directory first
+    # Adjust the filename for moving based on output format
+    output_ext=${OUTPUT_FORMAT}
+    vtt_filename="${filename}.wav.${output_ext}"
+    
+    # Move the output file to the temporary output directory first
     if [ -f "$WHISPER_DIR/data/$vtt_filename" ]; then
         mv "$WHISPER_DIR/data/$vtt_filename" "$TEMP_OUTPUT_DIR/"
         # Then move it to its final destination
         mv "$TEMP_OUTPUT_DIR/$vtt_filename" "$OUTPUT_DIR/"
     else
-        echo "${RED}Expected VTT file not found: $WHISPER_DIR/data/$vtt_filename${NOFORMAT}" >&2
+        echo "${RED}Expected output file not found: $WHISPER_DIR/data/$vtt_filename${NOFORMAT}" >&2
     fi
     
     # Remove the copied WAV file from the Whisper directory
