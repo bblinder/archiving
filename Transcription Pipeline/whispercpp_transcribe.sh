@@ -11,6 +11,7 @@ MODEL="medium.en"  # Default model
 DATA_DIR=""  # Will be set based on user input
 FORCE_DOWNLOAD=false
 SKIP_COMPILATION=false
+PROMPT="" # Default prompt, based on user input
 OUTPUT_FORMAT="vtt"  # Default output format
 
 cleanup() {
@@ -47,6 +48,7 @@ usage() {
   echo "  -d, --data-dir         Directory containing the data files to process"
   echo "  -s, --skip-compilation Skip compilation check"
   echo "  -f, --force-download   Force re-download of the model"
+  echo "  -p, --prompt           Specify the initial prompt"
   echo "  -o, --output-format    Specify output format (vtt or txt, default: vtt)"
   exit 1
 }
@@ -63,6 +65,9 @@ parse_params() {
       shift ;;
     -s | --skip-compilation) SKIP_COMPILATION=true ;;
     -f | --force-download) FORCE_DOWNLOAD=true ;;
+    -p | --prompt)
+      PROMPT="${2-}"
+      shift ;;
     -o | --output-format)
       if [[ "${2-}" == "vtt" || "${2-}" == "txt" ]]; then
         OUTPUT_FORMAT="${2-}"
@@ -140,7 +145,7 @@ for ext in "${media_extensions[@]}"; do
     cp "$converted_path" "$WHISPER_DIR/data/"
     
     # Run the transcription with the specified output format
-    "$WHISPER_DIR/main" -m "$WHISPER_DIR/models/ggml-${MODEL}.bin" -l en --output-${OUTPUT_FORMAT} -pc -pp -f "$WHISPER_DIR/data/${filename}.wav"
+    "$WHISPER_DIR/main" -m "$WHISPER_DIR/models/ggml-${MODEL}.bin" -l en --output-${OUTPUT_FORMAT} -pc -pp --prompt $PROMPT -f "$WHISPER_DIR/data/${filename}.wav"
     
     # Adjust the filename for moving based on output format
     output_ext=${OUTPUT_FORMAT}
