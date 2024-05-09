@@ -22,6 +22,10 @@ import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
+# Global variables
+OPML_FILE_NAME = f"youtube_subscriptions_{datetime.now().strftime('%Y-%m-%d')}.opml"
+USER = "brandon.blinderman@gmail.com"
+
 # Check if the 'subscriptions.json' file exists
 if not os.path.isfile("subscriptions.json"):
     print("Error: 'subscriptions.json' file not found.")
@@ -37,13 +41,13 @@ root = ET.Element("opml", version="1.0")
 # Add the head section with details
 head = ET.SubElement(root, "head")
 title = ET.SubElement(head, "title")
-title.text = "RSS subscriptions for brandon.blinderman@gmail.com"
+title.text = f"RSS subscriptions for {USER}"
 date_created = ET.SubElement(head, "dateCreated")
 date_created.text = datetime.now().strftime(
     "%a, %d %b %Y %H:%M:%S +0000"
 )  # Format the current UTC time
 owner_email = ET.SubElement(head, "ownerEmail")
-owner_email.text = "brandon.blinderman@gmail.com"
+owner_email.text = USER
 
 # Create the body of the OPML file
 body = ET.SubElement(root, "body")
@@ -61,6 +65,5 @@ for url in urls:
 
 # Generate the OPML XML structure
 tree = ET.ElementTree(root)
-filename = f"youtube_subscriptions_{datetime.now().strftime('%Y-%m-%d')}.opml"
-tree.write(filename, encoding="UTF-8", xml_declaration=True)
-print(f"::: OPML file generated successfully: {filename}")
+tree.write(OPML_FILE_NAME, encoding="UTF-8", xml_declaration=True)
+print(f"::: OPML file generated successfully: {OPML_FILE_NAME}")
