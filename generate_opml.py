@@ -8,6 +8,7 @@ then creates an OPML file with the subscriptions listed under the 'YouTube Chann
 
 Usage:
 1. Visit your YouTube subscriptions page and load all the subscriptions.
+2. Open the developer console in your browser.
 2. Copy the list of subscriptions as a JSON array using the provided JavaScript code:
     ```javascript
     copy(JSON.stringify(Array.from(new Set(Array.prototype.map.call(document.querySelectorAll('a.channel-link'), (link) => link.href))).filter((x) => !x.includes('/channel/')), null, 2))
