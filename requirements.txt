@@ -12,3 +12,4 @@ deepmultilingualpunctuation
 yaspin
 validators
 webvtt-py
+loguru
