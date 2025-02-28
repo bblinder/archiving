@@ -57,8 +57,8 @@ parse_params() {
   while :; do
     case "${1-}" in
     -h | --help) usage ;;
-    -m | --model) 
-      MODEL="${2-}"; 
+    -m | --model)
+      MODEL="${2-}";
       shift ;;
     -d | --data-dir)
       DATA_DIR="${2-}";
@@ -140,17 +140,17 @@ for ext in "${media_extensions[@]}"; do
     filename="${f%.*}"
     converted_path="$OUTPUT_DIR/${filename}.wav"
     ffmpeg -i "$i" -acodec pcm_s16le -ac 1 -ar 16000 "$converted_path"
-    
+
     # Temporarily copy the converted file to the Whisper directory
     cp "$converted_path" "$WHISPER_DIR/data/"
-    
+
     # Run the transcription with the specified output format
-    "$WHISPER_DIR/main" -m "$WHISPER_DIR/models/ggml-${MODEL}.bin" -l en --output-${OUTPUT_FORMAT} -pc -pp --prompt $PROMPT -f "$WHISPER_DIR/data/${filename}.wav"
-    
+    "$WHISPER_DIR/build/bin/whisper-cli" -m "$WHISPER_DIR/models/ggml-${MODEL}.bin" -l en --output-${OUTPUT_FORMAT} -pc -pp --prompt $PROMPT -f "$WHISPER_DIR/data/${filename}.wav"
+
     # Adjust the filename for moving based on output format
     output_ext=${OUTPUT_FORMAT}
     vtt_filename="${filename}.wav.${output_ext}"
-    
+
     # Move the output file to the temporary output directory first
     if [ -f "$WHISPER_DIR/data/$vtt_filename" ]; then
         mv "$WHISPER_DIR/data/$vtt_filename" "$TEMP_OUTPUT_DIR/"
@@ -159,7 +159,7 @@ for ext in "${media_extensions[@]}"; do
     else
         echo "${RED}Expected output file not found: $WHISPER_DIR/data/$vtt_filename${NOFORMAT}" >&2
     fi
-    
+
     # Remove the copied WAV file from the Whisper directory
     rm "$WHISPER_DIR/data/${filename}.wav"
   done
