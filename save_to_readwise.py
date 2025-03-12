@@ -8,60 +8,106 @@ import os
 import argparse
 import json
 import requests
+from urllib.parse import urlparse
+import logging
+
+# Setup basic configuration for logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 API_ENDPOINT = "https://readwise.io/api/v3/save/"
 
-args = argparse.ArgumentParser()
-args.add_argument("URL", help="URL of the article")
-args.add_argument("--tags", nargs="*", help="Tags to add to the article")
-args.add_argument("--config", help="Path to config file", required=False)
-args = args.parse_args()
 
-
-if args.config:
-    with open(args.config, "r", encoding="utf-8") as file:
-        config = json.load(file)
-        READWISE_TOKEN = config["READWISE_TOKEN"]
-else:
-    READWISE_TOKEN = os.environ.get("READWISE_TOKEN")
+def load_config(config_path):
+    """Load configuration from a JSON file."""
+    try:
+        with open(config_path, "r", encoding="utf-8") as file:
+            config = json.load(file)
+            return config
+    except FileNotFoundError:
+        logging.warning(
+            f"Config file {config_path} not found. Using environment variables."
+        )
+    except json.JSONDecodeError:
+        logging.error("Failed to decode JSON from the configuration file.")
+    return None
 
 
 def check_env_vars():
-    """Check if the environment variables are set."""
-    if not READWISE_TOKEN:
-        raise EnvironmentError(
+    """Check if the necessary environment variables are set."""
+    config = load_config(args.config) if args.config else None
+    global READWISE_TOKEN, API_ENDPOINT
+
+    if config and "READWISE_TOKEN" in config:
+        READWISE_TOKEN = config["READWISE_TOKEN"]
+    elif READWISE_TOKEN := os.environ.get("READWISE_TOKEN"):
+        pass
+    else:
+        logging.error(
             "READWISE_TOKEN environment variable not set. Either export it or pass it as an argument with `--config`."
         )
-    if not API_ENDPOINT:
-        raise Exception("API_ENDPOINT environment variable not set.")
-    return True
+        exit(1)
+
+    if API_ENDPOINT != config.get("API_ENDPOINT", API_ENDPOINT):
+        API_ENDPOINT = config.get("API_ENDPOINT", API_ENDPOINT)
+    elif not API_ENDPOINT:
+        logging.error("API_ENDPOINT environment variable not set.")
+        exit(1)
+
+
+def is_valid_url(url):
+    """Validate the URL."""
+    try:
+        result = urlparse(url)
+        return all([result.scheme in ["http", "https"], result.netloc])
+    except Exception as e:
+        logging.error(f"Invalid URL: {url}. Error: {e}")
+        return False
 
 
 def add_article(url, tags):
-    """Add an article to Readwise.
+    """Add an article to Readwise."""
+    if not is_valid_url(url):
+        logging.error("Failed to validate the provided URL.")
+        exit(1)
 
-    Args:
-        url (str): URL of the article.
-        tags (list): List of tags to add to the article.
-    """
-    response = requests.post(
-        url=API_ENDPOINT,
-        headers={
-            "Authorization": f"Token {READWISE_TOKEN}",
-            "Content-Type": "application/json",
-        },
-        json={"url": url, "tags": tags},
-    )
+    try:
+        response = requests.post(
+            url=API_ENDPOINT,
+            headers={
+                "Authorization": f"Token {READWISE_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json={"url": url, "tags": tags},
+        )
+        response.raise_for_status()  # Raises an HTTPError for bad responses
 
-    if response.status_code in {200, 201}:
-        print(f"Added {url} to Readwise.")
-        print(f"Readwise URL: {response.json()['url']}")
-    else:
-        print(f"Failed to add {url}. Status code: {response.status_code}")
+        logging.info(f"Added {url} to Readwise.")
+        readwise_url = response.json().get("url")
+        if readwise_url:
+            logging.info(f"Readwise URL: {readwise_url}")
+    except requests.exceptions.HTTPError as e:
+        logging.error(f"HTTP Error occurred while adding article: {e}")
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 
 def main():
-    """Constructing the request and adding tags"""
+    """Main function to parse arguments and add articles."""
+    global args
+    parser = argparse.ArgumentParser(description="Adds an article to Readwise Reader.")
+    parser.add_argument("URL", help="URL of the article")
+    parser.add_argument(
+        "--tags", nargs="*", help="Tags to add to the article", default=[]
+    )
+    parser.add_argument(
+        "--config",
+        help="Path to config file",
+        required=False,
+    )
+    args = parser.parse_args()
+
     check_env_vars()
     add_article(args.URL, args.tags)
 
