@@ -1,5 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = ["validators", "yaspin", "yt_dlp", "webvtt-py", "deepmultilingualpunctuation"]
+# ///
 
 """
 Convert a WebVTT subtitle file to a formatted transcript.
@@ -12,12 +14,11 @@ Usage:
 import argparse
 import html
 import logging
-import os
 import re
 import sys
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional
 
 # Third-party imports
 import validators
@@ -52,10 +53,15 @@ class TranscriptProcessor:
         if self._punctuation_model is None:
             try:
                 from deepmultilingualpunctuation import PunctuationModel
-                with yaspin(text="Loading punctuation model...", color="blue") as spinner:
+
+                with yaspin(
+                    text="Loading punctuation model...", color="blue"
+                ) as spinner:
                     self._punctuation_model = PunctuationModel()
             except ImportError:
-                logger.warning("deepmultilingualpunctuation not installed. Proceeding without punctuation restoration.")
+                logger.warning(
+                    "deepmultilingualpunctuation not installed. Proceeding without punctuation restoration."
+                )
                 self._punctuation_model = False
         return self._punctuation_model
 
@@ -87,7 +93,7 @@ class TranscriptProcessor:
     def validate_input(self, input_path: str) -> Optional[str]:
         """Validate input and return path to VTT file."""
         # Check if input is a URL
-        if input_path.startswith(('http://', 'https://')):
+        if input_path.startswith(("http://", "https://")):
             if not validators.url(input_path):
                 logger.error("Invalid URL provided.")
                 return None
@@ -96,12 +102,14 @@ class TranscriptProcessor:
         # Check if input is a local file
         input_file = Path(input_path)
         if input_file.exists():
-            if input_file.suffix.lower() != '.vtt':
+            if input_file.suffix.lower() != ".vtt":
                 logger.error("File exists but is not a .vtt file.")
                 return None
             return str(input_file)
 
-        logger.error(f"Input '{input_path}' is neither a valid URL nor an existing file.")
+        logger.error(
+            f"Input '{input_path}' is neither a valid URL nor an existing file."
+        )
         return None
 
     def download_vtt(self, url: str) -> Optional[str]:
@@ -112,7 +120,7 @@ class TranscriptProcessor:
             try:
                 # First extract video info to get the title
                 # We use a temporary file for redirection to avoid yaspin issues
-                with tempfile.TemporaryFile(mode='w+') as tmpfile:
+                with tempfile.TemporaryFile(mode="w+") as tmpfile:
                     orig_stdout, orig_stderr = sys.stdout, sys.stderr
                     sys.stdout, sys.stderr = tmpfile, tmpfile
 
@@ -138,7 +146,7 @@ class TranscriptProcessor:
 
                 # Download subtitles
                 spinner.text = "Downloading subtitles..."
-                with tempfile.TemporaryFile(mode='w+') as tmpfile:
+                with tempfile.TemporaryFile(mode="w+") as tmpfile:
                     orig_stdout, orig_stderr = sys.stdout, sys.stderr
                     sys.stdout, sys.stderr = tmpfile, tmpfile
 
@@ -177,8 +185,8 @@ class TranscriptProcessor:
         input_path = Path(vtt_path)
         stem = input_path.stem
         # Remove language code if present (e.g., video.en.vtt -> video)
-        if '.' in stem:
-            stem = stem.split('.')[0]
+        if "." in stem:
+            stem = stem.split(".")[0]
         return input_path.with_name(f"{stem}_transcript.txt")
 
     def vtt_to_transcript(self, vtt_path: str) -> str:
@@ -233,6 +241,7 @@ class TranscriptProcessor:
             try:
                 # Suppress warnings from the transformer library
                 import warnings
+
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore", category=UserWarning)
                     result = self.punctuation_model.restore_punctuation(text)
@@ -241,13 +250,15 @@ class TranscriptProcessor:
                 logger.warning(f"Failed to restore punctuation: {e}")
                 return text
 
-    def insert_paragraph_breaks(self, text: str, sentences_per_paragraph: int = 4) -> str:
+    def insert_paragraph_breaks(
+        self, text: str, sentences_per_paragraph: int = 4
+    ) -> str:
         """Insert paragraph breaks after a specified number of sentences."""
         sentences = re.split(r"(?<=[.!?])\s+", text)
         paragraphs = []
 
         for i in range(0, len(sentences), sentences_per_paragraph):
-            paragraph = " ".join(sentences[i:i+sentences_per_paragraph])
+            paragraph = " ".join(sentences[i : i + sentences_per_paragraph])
             if paragraph:
                 paragraphs.append(paragraph)
 
@@ -257,23 +268,33 @@ class TranscriptProcessor:
     def sanitize_title(title: str) -> str:
         """Sanitize a title for file naming."""
         # Replace non-alphanumeric chars with underscores, except hyphens
-        sanitized = re.sub(r'[^\w\-]', '_', title)
+        sanitized = re.sub(r"[^\w\-]", "_", title)
         # Replace multiple underscores with a single one
-        sanitized = re.sub(r'_+', '_', sanitized)
+        sanitized = re.sub(r"_+", "_", sanitized)
         # Trim underscores from start and end
-        return sanitized.strip('_')
+        return sanitized.strip("_")
 
 
 def main():
     """Main function to handle CLI arguments and process input."""
-    parser = argparse.ArgumentParser(description="Convert WebVTT subtitles to formatted transcript.")
+    parser = argparse.ArgumentParser(
+        description="Convert WebVTT subtitles to formatted transcript."
+    )
     parser.add_argument("input", help="Input video URL or VTT file path")
-    parser.add_argument("-d", "--delete", action="store_true",
-                        help="Delete the original VTT file after processing")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Enable verbose logging")
-    parser.add_argument("--no-punctuation", action="store_true",
-                        help="Skip punctuation restoration (faster processing)")
+    parser.add_argument(
+        "-d",
+        "--delete",
+        action="store_true",
+        help="Delete the original VTT file after processing",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
+    )
+    parser.add_argument(
+        "--no-punctuation",
+        action="store_true",
+        help="Skip punctuation restoration (faster processing)",
+    )
 
     args = parser.parse_args()
 
