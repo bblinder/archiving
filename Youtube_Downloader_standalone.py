@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = ["yt-dlp", "rich"]
+# ///
 
 """Downloads YouTube Videos and converts them via FFmpeg into mp3s."""
 
