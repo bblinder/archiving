@@ -1,6 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# dependencies = ["validators", "yaspin", "yt_dlp", "webvtt-py", "deepmultilingualpunctuation"]
+# requires-python = ">=3.11"
+# dependencies = ["validators", "yaspin", "yt_dlp", "webvtt-py", "deepmultilingualpunctuation", "spacy"]
 # ///
 
 """
@@ -39,13 +40,13 @@ except ImportError:
     logger.error("Install with: pip install webvtt-py")
     sys.exit(1)
 
-
 class TranscriptProcessor:
     """Handles the processing of VTT files into formatted transcripts."""
 
     def __init__(self, delete_original: bool = False):
         self.delete_original = delete_original
         self._punctuation_model = None
+        self._spacy_model = None
 
     @property
     def punctuation_model(self):
@@ -64,6 +65,22 @@ class TranscriptProcessor:
                 )
                 self._punctuation_model = False
         return self._punctuation_model
+
+    @property
+    def spacy_model(self):
+        """Lazy-load the spaCy model only when needed."""
+        if self._spacy_model is None:
+            try:
+                import spacy
+                with yaspin(text="Loading spaCy model...", color="cyan") as spinner:
+                    self._spacy_model = spacy.load("en_core_web_sm")
+            except ImportError:
+                logger.warning("spaCy not installed. Proceeding without advanced NLP formatting.")
+                self._spacy_model = False
+            except OSError:
+                logger.warning("spaCy model not found. Run: python -m spacy download en_core_web_sm")
+                self._spacy_model = False
+        return self._spacy_model
 
     def process_input(self, input_path: str) -> Optional[Path]:
         """Process the input and return the path to the output file."""
@@ -211,7 +228,7 @@ class TranscriptProcessor:
             return ""
 
     def format_transcript(self, text: str) -> str:
-        """Apply formatting to the transcript text."""
+        """Apply formatting to the transcript text using spaCy NLP."""
         if not text:
             return ""
 
@@ -220,17 +237,18 @@ class TranscriptProcessor:
         text = re.sub(r"\s+", " ", text)
         text = re.sub(r"\s+([,.!?])", r"\1", text)
 
-        # Capitalize first letter of sentences
-        text = re.sub(r"(^|\.\s+)(\w)", lambda m: m.group(1) + m.group(2).upper(), text)
-
         # Restore punctuation if model is available
         if self.punctuation_model:
             text = self.restore_punctuation(text)
 
-        # Add paragraph breaks
-        text = self.insert_paragraph_breaks(text)
-
-        return text.strip()
+        # Use spaCy for advanced formatting if available
+        if self.spacy_model:
+            return self.spacy_format(text)
+        else:
+            # Fall back to basic formatting
+            text = re.sub(r"(^|\.\s+)(\w)", lambda m: m.group(1) + m.group(2).upper(), text)
+            text = self.insert_paragraph_breaks(text)
+            return text.strip()
 
     def restore_punctuation(self, text: str) -> str:
         """Restore punctuation using a pre-trained model."""
@@ -249,6 +267,92 @@ class TranscriptProcessor:
             except Exception as e:
                 logger.warning(f"Failed to restore punctuation: {e}")
                 return text
+
+    def spacy_format(self, text: str) -> str:
+        """Use spaCy for intelligent text formatting."""
+        with yaspin(text="Applying NLP formatting...", color="blue") as spinner:
+            doc = self.spacy_model(text)
+
+            # Proper sentence segmentation
+            sentences = [sent.text.strip() for sent in doc.sents]
+
+            # Capitalize first letter of each sentence
+            sentences = [s[0].upper() + s[1:] if s else s for s in sentences]
+
+            # Group sentences into paragraphs based on topic similarity
+            paragraphs = self.group_sentences_by_topic(sentences)
+
+            spinner.ok("✓")
+            return "\n\n".join(paragraphs)
+
+    def group_sentences_by_topic(self, sentences, similarity_threshold=0.5, max_sentences=5):
+        """Group sentences into paragraphs based on topic similarity."""
+        if not sentences:
+            return []
+
+        paragraphs = []
+        current_para = [sentences[0]]
+
+        for i in range(1, len(sentences)):
+            # If we've reached max sentences per paragraph, start a new one
+            if len(current_para) >= max_sentences:
+                paragraphs.append(" ".join(current_para))
+                current_para = [sentences[i]]
+                continue
+
+            # Check semantic similarity with previous sentence
+            prev_doc = self.spacy_model(current_para[-1])
+            curr_doc = self.spacy_model(sentences[i])
+
+            # If documents are too short, similarity might not be reliable
+            if len(prev_doc) < 3 or len(curr_doc) < 3:
+                current_para.append(sentences[i])
+                continue
+
+            # Check similarity to determine paragraph breaks
+            try:
+                similarity = prev_doc.similarity(curr_doc)
+                if similarity < similarity_threshold:
+                    paragraphs.append(" ".join(current_para))
+                    current_para = [sentences[i]]
+                else:
+                    current_para.append(sentences[i])
+            except:
+                # If similarity calculation fails, just append
+                current_para.append(sentences[i])
+
+        # Add the last paragraph
+        if current_para:
+            paragraphs.append(" ".join(current_para))
+
+        return paragraphs
+
+    def format_named_entities(self, text: str) -> str:
+        """Format named entities in the text."""
+        if not self.spacy_model:
+            return text
+
+        doc = self.spacy_model(text)
+        formatted_parts = []
+        last_end = 0
+
+        for ent in doc.ents:
+            # Add text before the entity
+            formatted_parts.append(text[last_end:ent.start_char])
+
+            # Format the entity based on its type
+            if ent.label_ in ("PERSON", "ORG", "GPE", "LOC"):
+                # Ensure proper capitalization for names, organizations, and locations
+                formatted_parts.append(ent.text.title())
+            else:
+                formatted_parts.append(ent.text)
+
+            last_end = ent.end_char
+
+        # Add any remaining text
+        formatted_parts.append(text[last_end:])
+
+        return "".join(formatted_parts)
 
     def insert_paragraph_breaks(
         self, text: str, sentences_per_paragraph: int = 4
@@ -274,7 +378,6 @@ class TranscriptProcessor:
         # Trim underscores from start and end
         return sanitized.strip("_")
 
-
 def main():
     """Main function to handle CLI arguments and process input."""
     parser = argparse.ArgumentParser(
@@ -295,6 +398,11 @@ def main():
         action="store_true",
         help="Skip punctuation restoration (faster processing)",
     )
+    parser.add_argument(
+        "--no-spacy",
+        action="store_true",
+        help="Skip spaCy-based formatting (faster processing)",
+    )
 
     args = parser.parse_args()
 
@@ -302,12 +410,16 @@ def main():
     if args.verbose:
         logging.getLogger().setLevel(logging.INFO)
 
-    # Process the input
+    # processing the input
     processor = TranscriptProcessor(delete_original=args.delete)
 
     # Skip punctuation model if requested
     if args.no_punctuation:
         processor._punctuation_model = False
+
+    # Skip spaCy model if requested
+    if args.no_spacy:
+        processor._spacy_model = False
 
     output_path = processor.process_input(args.input)
 
@@ -315,7 +427,6 @@ def main():
         print(f"\nTranscript saved to: {output_path}")
         return 0
     return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())
