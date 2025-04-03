@@ -8,7 +8,9 @@ Adds an article to Readwise Reader.
 """
 
 import os
+import sys
 import argparse
+import shutil
 import json
 import requests
 from urllib.parse import urlparse
@@ -21,6 +23,11 @@ logging.basicConfig(
 
 API_ENDPOINT = "https://readwise.io/api/v3/save/"
 
+def check_uv_installed():
+    """Check if uv is installed on the system."""
+    if not shutil.which("uv"):
+        logging.error("UV is not installed. Please install it first: https://github.com/astral-sh/uv")
+        sys.exit(1)
 
 def load_config(config_path):
     """Load configuration from a JSON file."""
