@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = ["pyperclip"]
+# ///
 
 """Returns a formatted URL for archive.is links"""
 
@@ -8,6 +11,13 @@ import urllib.parse
 from pathlib import Path
 from typing import List, Iterator
 from urllib.parse import urlparse
+
+try:
+    import pyperclip as pc
+except ImportError:
+    print("::: Pyperclip not installed, copying to clipboard will not work")
+    print("::: Continuing without clipboard support...\n")
+    pc = None
 
 
 class URLFormatter:
@@ -59,8 +69,10 @@ def main():
     # Process and print each URL
     for url in urls:
         formatted_url = formatter.format_url(url)
+        if pc:
+            pc.copy(formatted_url)
+            print("URL copied to clipboard")
         print(formatted_url)
-
 
 if __name__ == "__main__":
     main()
