@@ -89,7 +89,7 @@ def main():
     if args.urls and pc and formatted_urls:
         # Only copy to clipboard when direct URLs are provided
         pc.copy(formatted_urls[-1])  # Copy the last formatted URL
-        print("Last URL copied to clipboard")
+        print("URL copied to clipboard")
 
     # Append formatted URLs to the original file if using file input
     if args.file and formatted_urls:
