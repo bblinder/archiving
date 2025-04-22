@@ -7,7 +7,6 @@
 
 import argparse
 import sys
-import urllib.parse
 from pathlib import Path
 from typing import List, Iterator
 from urllib.parse import urlparse
@@ -52,6 +51,19 @@ def read_urls(file_path: Path) -> Iterator[str]:
         sys.exit(1)
 
 
+def append_to_file(file_path: Path, formatted_urls: List[str]) -> None:
+    """Append formatted URLs to the original file"""
+    try:
+        with open(file_path, "a") as f:
+            f.write("\n\n\n# Formatted URLs\n")
+            for url in formatted_urls:
+                f.write(f"{url}\n")
+        print(f"Formatted URLs appended to {file_path}")
+    except Exception as e:
+        print(f"Error appending to file {file_path}: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Format URLs for archive.is")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -64,15 +76,25 @@ def main():
     formatter = URLFormatter()
 
     # Process URLs from command line or file
-    urls = read_urls(args.file) if args.file else args.urls
+    urls = list(read_urls(args.file)) if args.file else args.urls
+    formatted_urls = []
 
-    # Process and print each URL
+    # Process each URL
     for url in urls:
         formatted_url = formatter.format_url(url)
-        if pc:
-            pc.copy(formatted_url)
-            print("URL copied to clipboard")
+        formatted_urls.append(formatted_url)
         print(formatted_url)
+
+    # Handle clipboard and file operations
+    if args.urls and pc and formatted_urls:
+        # Only copy to clipboard when direct URLs are provided
+        pc.copy(formatted_urls[-1])  # Copy the last formatted URL
+        print("Last URL copied to clipboard")
+
+    # Append formatted URLs to the original file if using file input
+    if args.file and formatted_urls:
+        append_to_file(args.file, formatted_urls)
+
 
 if __name__ == "__main__":
     main()
