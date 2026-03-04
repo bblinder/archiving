@@ -124,6 +124,7 @@ def download_url(url, args):
             "outtmpl": output_path,
             "writethumbnail": True,
             "format": "bestaudio/best",
+            "remote_components": ["ejs:github"],
             "postprocessors": [
                 {
                     "key": "FFmpegMetadata",
