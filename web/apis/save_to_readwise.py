@@ -7,14 +7,15 @@
 Adds an article to Readwise Reader.
 """
 
-import os
-import sys
 import argparse
-import shutil
 import json
-import requests
-from urllib.parse import urlparse
 import logging
+import os
+import shutil
+import sys
+from urllib.parse import urlparse
+
+import requests
 
 # Setup basic configuration for logging
 logging.basicConfig(
@@ -23,11 +24,15 @@ logging.basicConfig(
 
 API_ENDPOINT = "https://readwise.io/api/v3/save/"
 
+
 def check_uv_installed():
     """Check if uv is installed on the system."""
     if not shutil.which("uv"):
-        logging.error("UV is not installed. Please install it first: https://github.com/astral-sh/uv")
+        logging.error(
+            "UV is not installed. Please install it first: https://github.com/astral-sh/uv"
+        )
         sys.exit(1)
+
 
 def load_config(config_path):
     """Load configuration from a JSON file."""
@@ -57,13 +62,13 @@ def check_env_vars():
         logging.error(
             "READWISE_TOKEN environment variable not set. Either export it or pass it as an argument with `--config`."
         )
-        exit(1)
+        sys.exit(1)
 
     if API_ENDPOINT != config.get("API_ENDPOINT", API_ENDPOINT):
         API_ENDPOINT = config.get("API_ENDPOINT", API_ENDPOINT)
     elif not API_ENDPOINT:
         logging.error("API_ENDPOINT environment variable not set.")
-        exit(1)
+        sys.exit(1)
 
 
 def is_valid_url(url):
@@ -80,7 +85,7 @@ def add_article(url, tags):
     """Add an article to Readwise."""
     if not is_valid_url(url):
         logging.error("Failed to validate the provided URL.")
-        exit(1)
+        sys.exit(1)
 
     try:
         response = requests.post(
