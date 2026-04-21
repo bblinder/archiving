@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# dependencies = ["yt-dlp", "rich"]
+# dependencies = ["yt-dlp[default]", "rich"]
 # ///
 
 """Downloads YouTube Videos and converts them via FFmpeg into mp3s."""
