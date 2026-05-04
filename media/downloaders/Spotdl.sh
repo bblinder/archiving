@@ -2,8 +2,6 @@
 
 set -Eeuo pipefail
 
-COMMANDS=("spotdl" "yt-dlp")
-
 OUTPUT_FORMAT='{artist} - {title}'
 HELP_MSG="Usage: $(basename "$0") [options] arguments
 
@@ -17,17 +15,10 @@ Examples:
 "
 
 check_dependencies() {
-    if ! command -v python3 &> /dev/null; then
-        echo "Python 3 not found. Please install Python 3."
+    if ! command -v uv &> /dev/null; then
+        echo "uv not found. Please install uv: https://docs.astral.sh/uv/getting-started/installation/"
         exit 1
     fi
-
-    for package in "${COMMANDS[@]}"; do
-        if ! python3 -m pip show "$package" &> /dev/null; then
-            echo "$package not found. Please install with pip, e.g. pip install $package."
-            exit 1
-        fi
-    done
 }
 
 parse_arguments() {
@@ -60,7 +51,8 @@ main() {
     check_dependencies
     parse_arguments "$@"
 
-    python3 -m spotdl "$@" --output "$OUTPUT_FORMAT"
+    uvx spotdl "$@" --output "$OUTPUT_FORMAT"
 }
 
 main "$@"
+
