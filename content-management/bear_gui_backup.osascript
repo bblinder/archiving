@@ -1,6 +1,6 @@
 #!/usr/bin/osascript
 
-set backupPath to "~/Dropbox/Backups/Bear"
+set backupPath to "~/Library/CloudStorage/Dropbox/Backups/Bear"
 set osVersion to {system attribute "sys1", system attribute "sys2", system attribute "sys3"}
 
 -- Launch/switch to Bear
